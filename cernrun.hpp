@@ -34,7 +34,6 @@ extern "C" {
     return false;
   }
 
-  // // call hbook1(isilicio*100000+9,'Pull-cluster',1000,0.5,1500.5           ,0.)
   void hbook1(int id, std::string name,
               int nchan, float_t min, float_t max, 
               float_t other=0.) {
@@ -42,11 +41,6 @@ extern "C" {
     hbook1_(&id,&name[0],&nchan,(float*)&min,(float*)&max,(float*)&other,dummy);
   }
 
-  // //  call hbook2(310000,'PH-2d',      20,         0.5,  20.5,1500,0.5,1500.5,0.)
-  // void hbook2_(const int*, const char*, 
-  //              const int*, const float_t*, const float_t*, 
-  //              const int*, const float_t*, const float_t*, 
-  //              const float_t*);
   void hbook2(int id, std::string name,
               int nchan_x, float_t x_min, float_t x_max, 
               int nchan_y, float_t y_min, float_t y_max, 

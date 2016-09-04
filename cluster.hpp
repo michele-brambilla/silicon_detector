@@ -8,81 +8,49 @@
 #include <numeric>
 #include <algorithm>
 
-#include <histo.hpp>
+// fake histograms
+//#include <histo.hpp>
+
+#include "cernrun.hpp"
 
 
 namespace algo {
-
-  template<typename cluster>
-  struct cluster_info {
-    typedef typename cluster::array_t array_t;
-    typedef typename array_t::iterator iterator_t;
-
-    iterator_t first;
-    iterator_t last;
-  };
-
-  template<typename silicio_t, typename Predicate>
-  struct cluster {
-
-    typedef typename silicio_t::value_type data_t;
-    typedef typename std::vector<data_t> array_t;
-    typedef cluster<silicio_t,Predicate> self_t;
-
-    //    cluster() { }
-    cluster(std::vector<data_t>& d_, 
-            std::vector<data_t>& r_, std::vector<bool>& s_) : d(d_), r(r_), s(s_) { }
-    cluster(silicio_t& source) : d(source.value), r(source.srms), s(source.status) { }
-    cluster(self_t& other) : d(other.d), r(other.r), s(other.s) { }
-
-    void operator()(const data_t& cut) {
-      typename array_t::iterator it=d.begin();
-      typename array_t::iterator rms=r.begin();
-      std::vector<bool>::iterator stat=s.begin();
-      Predicate Pred;
-
-      do {
-
-        it=Pred(it,d.end(),rms,stat,cut);
-        std::cout << (*it) << std::endl;
-
-      } while(++it!=d.end());
-
-
-
-    }
-
-    std::vector<data_t>& d;
-    std::vector<data_t>& r;
-    std::vector<bool>& s;
-    std::vector<cluster_info<self_t> > info;
-
-  };
-
-
-  template <typename InputIterator, typename StatusIterator>
-  struct AllOnCluster {
-    AllOnCluster() { };
-    InputIterator operator()(InputIterator first, 
-                             const InputIterator last,
-                             InputIterator rms, 
-                             StatusIterator s,
-                             typename InputIterator::value_type cut) {
-      do {
-        ++rms;
-        ++s;
-      } while (++first!=last);
-      
-      return first;
-    }
-  };
-
 
 
   struct cluster_data {
     int seed;
     int begin;
     int end;
+
+    float amplitude;
+    float snr;
+    
+    float eta;
+    float pullL;
+    float pullR;
+    
+    float x_cm;
+    float x_pos;
+
+    void fill_histo(const int i, float pitch) {
+      hf1(120+i,pullL);
+      hf1(130+i,pullR);
+      hf1(140+i,eta);
+      
+      hf1(150+i,amplitude);
+      hf1(160+i,snr);
+      hf1(170+i,end-begin);
+    }
+
+    void fill_histo_hit(const int i, float pitch) {
+      
+      hf1(190+i,x_cm);
+      hf1(200+i,x_cm-std::floor(x_cm/pitch)*pitch);
+      hf1(210+i,x_pos);
+      hf1(220+i,x_pos-std::floor(x_cm/pitch)*pitch);
+
+
+    }
   };
 
   template <typename S>
@@ -113,12 +81,11 @@ namespace algo {
       }
 
     }
-    // std::cout << cluster.size() << std::endl;
-    // if( cluster.size() )
-    //   std::cout << cluster[0].begin << "\t" << cluster[0].end << std::endl;
     return std::move(cluster);
   }
 
+
+  
   template<typename S>
   float eta(const int& seed, const S& silicio) {    
     int L = seed-1,R = seed+1;
@@ -137,21 +104,50 @@ namespace algo {
 
   
   template<typename S>
-  void process_cluster(cluster_data& cluster, const S& silicio) {
+  void process_cluster(cluster_data& cluster,
+                       const S& silicio,
+                       typename S::value_type cut_low,
+                       typename S::value_type pitch) {
     cluster.seed = std::distance(silicio.begin(),std::max_element(silicio.begin()+cluster.begin,silicio.begin()+cluster.end));
+
+    //////////////
+    // basics
     int nr_strip    = cluster.end - cluster.begin;
-    float amplitude = std::accumulate(silicio.begin()+cluster.begin,silicio.begin()+cluster.end,0.);
-    float noise2 = std::inner_product(silicio.srms.begin()+cluster.begin,
+    cluster.amplitude = std::accumulate(silicio.begin()+cluster.begin,
+                                        silicio.begin()+cluster.end,
+                                        0.);
+    
+    typename S::value_type noise2 = std::inner_product(silicio.srms.begin()+cluster.begin,
                                       silicio.srms.begin()+cluster.end,
                                       silicio.srms.begin()+cluster.begin,
                                       0.)/nr_strip;
-
-    hf1(150,amplitude);
-    hf1(160,amplitude/std::sqrt(noise2));
-    hf1(170,nr_strip);
+    cluster.snr = cluster.amplitude/std::sqrt(noise2);
     
-  }
+    //////////////
+    // charge diffusion
+    cluster.eta = eta(cluster.seed, silicio);
+    typename S::value_type p;
+    if(cluster.seed > 0) {
+      p = silicio.value[cluster.seed-1]/silicio.srms[cluster.seed-1];
+      if(p>cut_low)
+        cluster.pullL = p;
+    }
+    if(cluster.seed < silicio.value.size()-1) {
+      p = silicio.value[cluster.seed+1]/silicio.srms[cluster.seed+1];
+      if(p>cut_low)
+        cluster.pullR = p;
+    }
 
+
+    /////////////
+    // hit point
+    std::vector<float> position(nr_strip);
+    std::iota(position.begin(),position.end(),0);
+    float cm = std::inner_product(silicio.begin()+cluster.begin, silicio.begin()+cluster.end,
+                                  position.begin(),
+                                  0.)/cluster.amplitude;
+    cluster.x_cm = (cm+cluster.begin)*pitch;
+  }
 
 
 }

@@ -1,8 +1,8 @@
 #include<iostream>
 #include<fstream>
 #include<iterator>
+#include<vector>
 
-#include "cernrun.hpp"
 #include "status.hpp"
 #include "pede_rms.hpp"
 #include "silicio.hpp"
@@ -91,6 +91,7 @@ int main(int argc, char **argv) {
                     &sili[2].value[0],
                     &offset);
 
+      float pitch = 50; // um
       std::vector<float> cut = {10.,10.,10.};
       std::vector<float> cut_low = {5.,5.,5.};
 
@@ -106,7 +107,7 @@ int main(int argc, char **argv) {
         hf2(23,cm[2],cm[3]);
         
         std::vector<algo::cluster_data> c = algo::clusterize(sili[i],cut[i]);
-        hf1(180+i,c.size());
+        hf1(180+i,c.size()); // numero di cluster
 
         if(c.size() > 0 ) {
           
@@ -114,24 +115,11 @@ int main(int argc, char **argv) {
           hf1( 110+i,(*sili[i].pull));
           
           for ( auto& cc : c ) {
-            algo::process_cluster<types::silicio<Nstrip> >(cc, sili[i]);
+            algo::process_cluster<types::silicio<Nstrip> >(cc, sili[i],cut_low[i],pitch);
+            cc.fill_histo(i,pitch);
+            //            if(cc.end - cc.begin == 2)
+              cc.fill_histo_hit(i,pitch);
             
-            float n;
-            n =algo::eta(cc.seed,sili[i]) ;
-            hf1(140+i,n);
-
-            float p;
-            if(cc.seed > 0) {
-              p = sili[i].value[cc.seed-1]/sili[i].srms[cc.seed-1];
-              if(p>cut_low[i])
-                hf1(120+i,p);
-            }
-            if(cc.seed < sili[i].value.size()-1) {
-              p=sili[i].value[cc.seed+1]/sili[i].srms[cc.seed+1];
-              if(p>cut_low[i])
-                hf1(130+i,p);
-            }
-                  
             
           }
         
@@ -148,6 +136,7 @@ int main(int argc, char **argv) {
   finalize_();
   return 0;
 }
+
 
 
 
@@ -170,11 +159,17 @@ void prepara_histo(const int N) {
     hbook1(140+i,"eta",100,-1,1.);
 
     // cluster
-    hbook1(150+i,"amplitude",100,0.,500.);
+    hbook1(150+i,"amplitude",100,0.,1000.);
     hbook1(160+i,"snr",100,0.,500.);
-    hbook1(170+i,"nr_strip",100,0.,5.);
-    hbook1(180+i,"nr_cluster",100,0.,5.);
+    hbook1(170+i,"nr_strip",5,0.,5.);
+    
+    hbook1(180+i,"nr_cluster",5,0.,5.);
 
+    hbook1(190+i,"x_cm",1000,0.,20000.);
+    hbook1(200+i,"interstrip_cm",1000,0.,50.);
+    hbook1(210+i,"x_pos",1000,0.,20000.);
+    hbook1(220+i,"insterstrip_pos",1000,0.,50.);
+    
   }
   
 }
