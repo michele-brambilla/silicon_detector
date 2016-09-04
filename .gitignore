@@ -1,0 +1,6 @@
+*.hbook
+*~
+util
+testing
+*.kumac
+*.kumacold
