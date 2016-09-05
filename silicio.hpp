@@ -150,7 +150,7 @@ void sub_pede(InputIterator begin, const InputIterator end, InputIterator pede, 
 //////////////////////
 // Assume adc gia' sottratta del pede e "spente" le strip "morte" 
 template<class InputIterator, typename T>
-T sub_cm(InputIterator begin, const InputIterator end, InputIterator rms, const T& cut=5.) {
+T sub_cm(InputIterator begin, const InputIterator end, InputIterator rms, const T& cut) {
   T gap,cm(0);
   int count = 0;
 

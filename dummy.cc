@@ -10,7 +10,10 @@
 #include "pede_rms.hpp"
 #include "silicio.hpp"
 #include "algo.hpp"
+#include "util.hpp"
 //#include "cluster.hpp"
+
+
 
 /////////
 // JSON input parser
@@ -27,28 +30,7 @@ const int offset=4;
 
 void prepara_histo(const int);
 
-std::ifstream open_config_file(const char* s) {
-  std::ifstream in;
-  try {
-    in.open(s);
-    in.exceptions ( std::ifstream::failbit | std::ifstream::badbit );
-  }
-  catch (std::ifstream::failure e) {
-    std::cout << "Exception opening/reading file: " << e.what() << std::endl;
-  }
-  return in;
-}
 
-std::string read_config_file(const char* s) {
-  std::ifstream in = open_config_file(s);
-  std::string config,buf;
-  while(!in.eof()) {
-     std::getline(in, buf,'\t');
-     config += buf;
-  }
-  in.close();
-  return config;
-}
 
 
 int main(int argc, char **argv) {
@@ -140,9 +122,14 @@ int main(int argc, char **argv) {
     //                 &sili[2].value[0],
     //                 &offset);
 
-    //   float pitch = 50; // um
-    //   std::vector<float> cut = {10.,10.,10.};
-    //   std::vector<float> cut_low = {5.,5.,5.};
+    float pitch = p["pitch"].GetFloat();
+    
+    std::vector<float> cut;
+    std::vector<float> cut_low;
+    for(int i=0;i<Nsili;++i) {
+      cut.push_back( p["cut"][i].GetFloat() );
+      cut_low.push_back( p["cut_low"][i].GetFloat() );
+    }
 
     //   std::vector<float> cm;
 
@@ -162,7 +149,10 @@ int main(int argc, char **argv) {
           
     //       hf1( 100+i,(*sili[i].ph_max));
     //       hf1( 110+i,(*sili[i].pull));
-          
+
+    //       hf2( 500+i,(*sili[i].ph_max),std::distance(sili[i].ph_max,sili[i].begin()));
+
+    
     //       for ( auto& cc : c ) {
     //         algo::process_cluster<types::silicio<Nstrip> >(cc, sili[i],cut_low[i],pitch);
     //         cc.fill_histo(i,pitch);

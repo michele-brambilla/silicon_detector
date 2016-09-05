@@ -38,22 +38,23 @@ int main(int argc, char **argv) {
   // else
   //   p.read("input");
 
-  std::ifstream input;
+  rapidjson::Document p;
+  rapidjson::ParseResult ok =p.Parse(read_config_file("input.js").c_str());
+  if( !ok ) {
+    throw std::runtime_error("Errore: file di configurazione non valido");
+  }
 
-  rapidjson::Document t;
-  t.Parse(conf.c_str());
-  if( t.HasParseError() ) { throw std::runtime_error("Errore: file di configurazione non valido"); }
-
+  std:: cout << "nfilemax\t" << p["nfilemax"].GetInt() << std::endl;
   
   //////////////////////////////
   // status
   types::status<Nsili_raw,Nstrip> st;
-  st("status.dat");
+  st(p["status"].GetString());
 
   types::pedestal<Nsili_raw,Nstrip> spede;
   types::rms<Nsili_raw,Nstrip> srms;
-  spede("run100204_pede.dat");
-  srms("run100204_pede.dat");
+  spede(p["pedestal"].GetString());
+  srms(p["pedestal"].GetString());x
 
   std::vector< types::silicio<Nstrip> > sili;
   sili.push_back(types::silicio<Nstrip>(spede[0],srms[0],st[0]));
@@ -62,7 +63,8 @@ int main(int argc, char **argv) {
 
   /////////////////////////
   // Inizializzo il file di output
-  init_( (p["output_directory"]+"/"+p["output"]).c_str());
+  init_( ( std::string(p["output_directory"].GetString())+"/"+
+           std::string(p["output"].GetString()) ).c_str());
 
   prepara_histo(3);
 
@@ -75,9 +77,19 @@ int main(int argc, char **argv) {
   // Esegue l'analisi (finche' ci sono files o fino al limite stabilito
   do {
     int nmax=-1;
-    std::string s = "run"+to_string(100204)+"_"+to_string(run_number,5)+".hbook";
-    if(!std::ifstream(s))
-      break;
+
+    std::ostringstream ss;
+    ss << std::setw(5) << std::setfill('0') << run_number;
+    std::string s2(ss.str());
+
+    
+    std::string s =  std::string(p["input_directory"].GetString()) + "/run"+std::to_string(p["first"].GetInt())+"_"+s2+".hbook";
+    
+    if(!std::ifstream(s)) {
+      std::cerr << "File " << s << " mancante." << std::endl;
+      continue;
+    }
+    
     std::cout << s << std::endl;
     s.resize(s.size());
 
@@ -102,12 +114,15 @@ int main(int argc, char **argv) {
                     &sili[2].value[0],
                     &offset);
 
-      float pitch = 50; // um
-      std::vector<float> cut = {10.,10.,10.};
-      std::vector<float> cut_low = {5.,5.,5.};
-
+      float pitch = p["pitch"].GetFloat();
+      std::vector<float> cut;
+      std::vector<float> cut_low;
+      for(int i=0;i<Nsili;++i) {
+        cut.push_back( p["cut"][i].GetFloat() );
+        cut_low.push_back( p["cut_low"][i].GetFloat() );
+      }
       std::vector<float> cm;
-
+      
       
       for(int i=0;i<Nsili;++i){
         cm = sili[i].pre_process(cut[i]);
@@ -124,6 +139,7 @@ int main(int argc, char **argv) {
           
           hf1( 100+i,(*sili[i].ph_max));
           hf1( 110+i,(*sili[i].pull));
+          hf2( 500+i,(*sili[i].ph_max),std::distance(sili[i].ph_max,sili[i].begin()));
           
           for ( auto& cc : c ) {
             algo::process_cluster<types::silicio<Nstrip> >(cc, sili[i],cut_low[i],pitch);
@@ -142,7 +158,7 @@ int main(int argc, char **argv) {
     chiudi_tupla_();
     
     std::cout << run_number << "\t" <<  atoi(p["nfilemax"].c_str()) << "\t" << istat << std::endl; 
-  } while ( ++run_number <= atoi(p["nfilemax"].c_str())); //&& istat==0
+  } while ( ( ++run_number <= p["nfilemax"].GetInt() ) ); //&& istat==0
   
   finalize_();
   return 0;
@@ -163,6 +179,9 @@ void prepara_histo(const int N) {
     // basics
     hbook1(100+i,"ph max",1000,0.,500.);
     hbook1(110+i,"pull",100,0.,250.);
+
+    // ph vs strip
+    hbook2(500+i,"ph max strip",1000,0.,500.,384,0,384);
     
     // charge distribution
     hbook1(120+i,"pull_L",100,.0,250.);
