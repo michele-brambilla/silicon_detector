@@ -9,6 +9,12 @@
 #include "algo.hpp"
 #include "cluster.hpp"
 
+/////////
+// JSON input parser
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+
 
 const int Nstrip=384;
 const int Nsili=3;
@@ -24,16 +30,21 @@ int main(int argc, char **argv) {
   int istat;
   int iev=1,ierr,id=1, run_number=1;
 
-  std::ifstream input;
-
   ////////////////
   // Leggo le informazioni del file di input
-  uparam::Param p;
-  if(argc>1)
-    p.read(argv[1]);
-  else
-    p.read("input");
+  // uparam::Param p;
+  // if(argc>1)
+  //   p.read(argv[1]);
+  // else
+  //   p.read("input");
 
+  std::ifstream input;
+
+  rapidjson::Document t;
+  t.Parse(conf.c_str());
+  if( t.HasParseError() ) { throw std::runtime_error("Errore: file di configurazione non valido"); }
+
+  
   //////////////////////////////
   // status
   types::status<Nsili_raw,Nstrip> st;
