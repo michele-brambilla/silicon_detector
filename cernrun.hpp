@@ -21,6 +21,12 @@ extern "C" {
   int chiudi_tupla_();
   void finalize_(void);
   void get_raw_data_(float_t*,float_t*,float_t*,const int*);
+  void get_raw_data1_(float_t*,const int*);
+  void get_raw_data2_(float_t*,const int*);
+  void get_raw_data3_(float_t*,const int*);
+  void get_raw_data4_(float_t*,const int*);
+  void get_raw_data5_(float_t*,const int*);
+  void get_raw_data6_(float_t*,const int*);
 }
 
 extern "C" {

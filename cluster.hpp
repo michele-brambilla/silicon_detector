@@ -69,7 +69,7 @@ namespace algo {
 
       if( *stat )
         continue;
-      
+      //      std:: cout << (*it) << "\t" << (*rms)*cut << std::endl;
       if( !in_cluster && (*it) > (*rms)*cut ) {
         in_cluster = true;
         c.begin=std::distance(s.begin(),it);
@@ -80,6 +80,13 @@ namespace algo {
         cluster.push_back(c);
       }
 
+      // std:: cout << c.begin << "\t" << in_cluster << "\t" << c.end << std::endl;
+      // std::cin >> last_good;
+    }
+    if(in_cluster) {
+      in_cluster = false;
+      c.end = 384;
+      cluster.push_back(c);
     }
     return std::move(cluster);
   }
@@ -151,8 +158,6 @@ namespace algo {
 
 
 }
-
-
 
 
 

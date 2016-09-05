@@ -2,6 +2,8 @@
 #include<fstream>
 #include<iterator>
 #include<vector>
+#include<iomanip>
+
 
 #include "status.hpp"
 #include "pede_rms.hpp"
@@ -54,7 +56,7 @@ int main(int argc, char **argv) {
   types::pedestal<Nsili_raw,Nstrip> spede;
   types::rms<Nsili_raw,Nstrip> srms;
   spede(p["pedestal"].GetString());
-  srms(p["pedestal"].GetString());x
+  srms(p["pedestal"].GetString());
 
   std::vector< types::silicio<Nstrip> > sili;
   sili.push_back(types::silicio<Nstrip>(spede[0],srms[0],st[0]));
@@ -157,7 +159,7 @@ int main(int argc, char **argv) {
 
     chiudi_tupla_();
     
-    std::cout << run_number << "\t" <<  atoi(p["nfilemax"].c_str()) << "\t" << istat << std::endl; 
+    //    std::cout << run_number << "\t" <<  atoi(p["nfilemax"].c_str()) << "\t" << istat << std::endl; 
   } while ( ( ++run_number <= p["nfilemax"].GetInt() ) ); //&& istat==0
   
   finalize_();

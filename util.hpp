@@ -31,7 +31,8 @@ std::ostream& operator<<(std::ostream& os, const std::vector<C> x) {
 }
 
 
-std::ifstream open_config_file(const char* s) {
+
+std::string read_config_file(const char* s) {
   std::ifstream in;
   try {
     in.open(s);
@@ -40,11 +41,7 @@ std::ifstream open_config_file(const char* s) {
   catch (std::ifstream::failure e) {
     std::cout << "Exception opening/reading file: " << e.what() << std::endl;
   }
-  return in;
-}
-
-std::string read_config_file(const char* s) {
-  std::ifstream in = open_config_file(s);
+  
   std::string config,buf;
   while(!in.eof()) {
      std::getline(in, buf,'\t');

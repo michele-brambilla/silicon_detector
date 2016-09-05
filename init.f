@@ -88,6 +88,74 @@
       
       end subroutine get_raw_data
 
+
+      subroutine get_raw_data6(v,is)
+      include 'common.inc'
+      integer,parameter :: Nstrip=384
+      integer :: is      
+      integer index
+      real v(Nstrip)
+      do istrip=1,Nstrip
+         v(istrip)=IVFAS_DATA6(istrip+is)
+      end do
+      end subroutine get_raw_data6
+
+      subroutine get_raw_data5(v,is)
+      include 'common.inc'
+      integer,parameter :: Nstrip=384
+      integer :: is      
+      integer index
+      real v(Nstrip)
+      do istrip=1,Nstrip
+         v(istrip)=IVFAS_DATA5(istrip+is)
+      end do
+      end subroutine get_raw_data5
+
+      subroutine get_raw_data4(v,is)
+      include 'common.inc'
+      integer,parameter :: Nstrip=384
+      integer :: is      
+      integer index
+      real v(Nstrip)
+      do istrip=1,Nstrip
+         v(istrip)=IVFAS_DATA4(istrip+is)
+      end do
+      end subroutine get_raw_data4
+
+      subroutine get_raw_data3(v,is)
+      include 'common.inc'
+      integer,parameter :: Nstrip=384
+      integer :: is      
+      integer index
+      real v(Nstrip)
+      do istrip=1,Nstrip
+         v(istrip)=IVFAS_DATA3(istrip+is)
+      end do
+      end subroutine get_raw_data3
+
+      subroutine get_raw_data2(v,is)
+      include 'common.inc'
+      integer,parameter :: Nstrip=384
+      integer :: is      
+      integer index
+      real v(Nstrip)
+      do istrip=1,Nstrip
+         v(istrip)=IVFAS_DATA2(istrip+is)
+      end do
+      end subroutine get_raw_data2
+
+      subroutine get_raw_data1(v,is)
+      include 'common.inc'
+      integer,parameter :: Nstrip=384
+      integer :: is      
+      integer index
+      real v(Nstrip)
+      do istrip=1,Nstrip
+         v(istrip)=IVFAS_DATA1(istrip+is)
+      end do
+      end subroutine get_raw_data1
+
+      
       
       subroutine led_event(led)
       include 'common.inc'
