@@ -15,7 +15,7 @@ INCLUDE = -I/sw/include -I/sw/include/cfortran -Wcpp -Irapidjson/include
 
 
 #CXX = clang++-mp-3.5 -std=c++11
-CXX = g++-mp-4.9 -std=c++11 --fast-math
+CXX = g++-mp-4.9 -std=c++11 --fast-math -fprofile-instr-generate -fprofile-instr-use
 FF = gfortran-mp-4.9
 
 headers := types.hpp util.hpp cernrun.hpp uparam.hpp pede_rms.hpp silicio.hpp algo.hpp cluster.hpp
