@@ -22,19 +22,36 @@ namespace types {
     status(const status& other) : s(other.s) { };
     
     array_t& operator[](const int i) { return s[i]; }
-    
+
+
     int operator()(const std::string& filename) { read(filename); }
 
     int read(const std::string& filename) {
       int value;
       std::ifstream is(filename.c_str());
-      //      if(!is.is_good()) return 1;
+      if( !is.good() )
+        throw std::runtime_error("Impossibile aprere il file di stato");
 
       for(int istrip=0;istrip<Nc;++istrip) 
         for(int isili=0;isili<Nr;++isili) {
           is >> value;
           s[isili][istrip]=static_cast<bool>(value);
         }
+      return 0;
+    }
+
+    template <typename T>
+    int set( T& p) {
+      if( (T::Nsili != Nsili) ||
+          (p[0].size() != s[0].size() ) )
+        throw std::runtime_error("Le dimensioni di status e pede non coincidono.");
+      
+      for(int isili=0;isili<Nr;++isili) {
+        fill(s[isili].begin(),s[isili].end(),false);
+        for(int istrip=0;istrip<Nc;++istrip) 
+          if( p[isili][istrip] < 1 )
+            s[isili][istrip] = true;
+      }
       return 0;
     }
 

@@ -23,7 +23,7 @@ headers := types.hpp util.hpp cernrun.hpp uparam.hpp pede_rms.hpp silicio.hpp al
 objects_fortran := init.o prepara_histo.o
 objects_cxx := pedestal.o
 
-mains := cernrun.o cernrun_basculo.o dummy.o
+mains := cernrun_basculo.o cernrun_pedestal.o
 
 exe := $(patsubst %.o,%,$(mains))
 

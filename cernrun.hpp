@@ -59,8 +59,8 @@ extern "C" {
   }
   
   // //  call hf1(100000*isilicio,subraw(istrip,isilicio),1.0)
-  void hf1(int id, float_t x, float_t y=1.0f) {
-    hf1_(&id,&x,&y);
+  void hf1(int id, float_t x, float_t weight=1.0f) {
+    hf1_(&id,&x,&weight);
   }
   void hf2(int id, float_t x, float_t y, float_t w=1.0f) {
     hf2_(&id,&x,&y,&w);

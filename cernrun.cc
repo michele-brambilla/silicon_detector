@@ -41,7 +41,12 @@ int main(int argc, char **argv) {
   //   p.read("input");
 
   rapidjson::Document p;
-  rapidjson::ParseResult ok =p.Parse(read_config_file("input.js").c_str());
+  rapidjson::ParseResult ok;
+  if(argc>1)
+    ok =p.Parse(read_config_file(argv[1]).c_str());
+  else
+    ok =p.Parse(read_config_file("input.js").c_str());
+  
   if( !ok ) {
     throw std::runtime_error("Errore: file di configurazione non valido");
   }
@@ -125,11 +130,16 @@ int main(int argc, char **argv) {
       }
       std::vector<float> cm;
       
-      
-      for(int i=0;i<Nsili;++i){
-        cm = sili[i].pre_process(cut[i]);
-        sili[i].process();
 
+      for(int i=0;i<Nsili;++i){
+        cm = sili[i].pre_process(p["soglia_cm"].GetFloat());
+
+        for(auto& c:cm)
+          std::cout << c << "\t";
+        std::cout << "\n";
+        std::cin >> i;
+          
+        sili[i].process();
         hf2(12,cm[1],cm[2]);
         hf2(13,cm[1],cm[3]);
         hf2(23,cm[2],cm[3]);

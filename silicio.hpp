@@ -8,23 +8,21 @@
 
 #include "algo.hpp"
 
+template<class Input>
+void subtract_commonmode(Input&, const int, const int, float);
+
+template<class Input, typename T>
+T compute_cm(Input&, const int, const int, const T&);
+
+template<class Input>
+void subtract_pedestal(Input&);
+    
 template<class InputIterator,class StatusIterator>
 void good_strips(const StatusIterator, const StatusIterator, InputIterator);
 
 template<class InputIterator,class StatusIterator, typename Predicate>
 void good_strips(StatusIterator, const StatusIterator, InputIterator, Predicate);
 
-template<class InputIterator,class StatusIterator>
-void sub_pede(InputIterator, const InputIterator, InputIterator, StatusIterator);
-
-template<class InputIterator,class StatusIterator, typename Predicate>
-void sub_pede(InputIterator, const InputIterator, InputIterator, StatusIterator, Predicate);
-
-// template<class InputIterator, typename Predicate>
-// InputIterator sub_cm(InputIterator, const InputIterator, InputIterator, Predicate);
-
-template<class InputIterator, typename T>
-T sub_cm(InputIterator, const InputIterator, InputIterator, const T&);
 
 template<class InputIterator,class OutputIterator>
 OutputIterator compute_snr(InputIterator,const InputIterator,InputIterator, OutputIterator);
@@ -32,7 +30,7 @@ OutputIterator compute_snr(InputIterator,const InputIterator,InputIterator, Outp
 
 namespace types {
 
-  template<int N>
+  template<int N,int Nasic=3>
   struct silicio {
     static const int Nstrip=N;
     typedef float value_type;
@@ -53,14 +51,11 @@ namespace types {
     value_type eta;
     value_type cut;
     
-    // silicio() { 
-    //   value.resize(Nstrip);
-    // }
     silicio(array_f& spede_,array_f& srms_,array_b& status_) : spede(spede_),srms(srms_),status(status_){ 
       value.resize(Nstrip);
       snr.resize(Nstrip);
-      pre_process();
-      process();
+      good_strips(status.begin(),status.end(),begin());
+      //      subtract_pedestal(*this);
     }
     silicio(const silicio& other) : value(other.value), spede(other.spede), srms(other.srms), status(other.status) { snr.resize(Nstrip); };
     
@@ -73,14 +68,14 @@ namespace types {
 
     array_f pre_process(const value_type& cut_ = 0.0f) {
       cut = cut_;
-      good_strips(status.begin(),status.end(),begin());
-      sub_pede(begin(),end(),spede.begin(),srms.begin(),std::bind2nd(std::greater<value_type>(),0.0f));
       array_f cm;
-      cm.push_back(sub_cm(value.begin()    ,value.end()+128,srms.begin()    ,cut));
-      cm.push_back(sub_cm(value.begin()+128,value.end()+256,srms.begin()+128,cut));
-      cm.push_back(sub_cm(value.begin()+256,value.end()+384,srms.begin()+256,cut));
+      for(int i=0;i<Nasic;++i) {
+        cm.push_back(compute_cm(*this,128*i,128*(i+1),cut));
+        subtract_commonmode(*this,128*i,128*(i+1),cm[i]);
+      }
       return cm;
     }
+
     
     void process() {
       compute_snr(value.begin(),value.end(),srms.begin(),snr.begin());
@@ -123,58 +118,51 @@ void good_strips(StatusIterator begin, const StatusIterator end, InputIterator d
 }
 
 
-template<class InputIterator,class StatusIterator>
-void sub_pede(InputIterator begin, const InputIterator end, InputIterator pede, StatusIterator st) {
-  InputIterator it=begin;
-  do {
-    if( (*st)==0 )
-      (*it) = std::max( (*it) - (*pede),0.0f);
-    ++pede;
-    ++st;
-  }while (++it!=end);
-}
-
-template<class InputIterator,class StatusIterator, typename Predicate>
-void sub_pede(InputIterator begin, const InputIterator end, InputIterator pede, StatusIterator st, Predicate Pred) {
-  InputIterator it=begin;
-  do {
-    if(Pred(*it))
-      (*it) = std::max( (*it) - (*pede),0.0f);
-    ++pede;
-    ++st;
-  }while (++it!=end);
-}
-
 
 
 //////////////////////
-// Assume adc gia' sottratta del pede e "spente" le strip "morte" 
-template<class InputIterator, typename T>
-T sub_cm(InputIterator begin, const InputIterator end, InputIterator rms, const T& cut) {
-  T gap,cm(0);
-  int count = 0;
-
-  InputIterator i(begin);
-  InputIterator r(rms);
-  do{
-    if ( ((*i) < cut*(*r)) && ((*i)>0) ) {
-      cm+=*i;
-      ++count;
+// Sottrae il pede dai dati raw
+template<class Input>
+void subtract_pedestal(Input& sili) {
+  float t;
+  for(int i=0;i<sili.value.size();++i) {
+    if(sili.spede[i] < 1)
+      sili.value[i] = -1;
+    else {
+      sili.value[i] -= sili.spede[i];
+      if (sili.value[i] < 0)
+        sili.value[i] = 0;
     }
-  }while(++r,++i!=end);
-
-  if(count > 0) {
-    cm/=static_cast<double>(count);
-    i=begin;
-    r=rms;
-    do{
-      if ( ((*i) < cut*(*r)) && ((*i)>0) )
-        (*i)-=cm;
-      if( (*i) < 0 ) (*i)=0;
-    }while(++r,++i!=end);
   }
-  return cm;
 }
+//////////////////////
+// Assume adc gia' sottratta del pede e "spente" le strip "morte"; calcola il cm e lo ritorna
+template<class Input, typename T>
+T compute_cm(Input& sili, const int first, const int last, const T& cut) {
+
+  float tmp_cm = 0;
+  int n=0;
+  for(int i = first;i<last;++i) {
+    if(sili.value[i] < 1.*cut && sili.value[i]>0) {
+      tmp_cm += sili.value[i];
+      n++;
+    } 
+  }
+  return tmp_cm/n;
+}
+//////////////////////
+// Assume adc gia' sottratta del pede e "spente" le strip "morte". Sottrae cm
+template<class Input>
+void subtract_commonmode(Input& sili, const int first, const int last, float cm) {
+  for(int i=0;i<sili.value.size();++i) {
+    if( sili.value[i] > 0)
+      sili.value[i] -= cm;
+    if (sili.value[i] < 0)
+      sili.value[i] = 0;
+  }
+}
+
+
 
 
 template<class InputIterator,class OutputIterator>
