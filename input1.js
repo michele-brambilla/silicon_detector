@@ -1,0 +1,20 @@
+{
+    "status" : "status.dat",
+    "pedestal" : "run100204_pede.dat",
+    "nfilemax" : 100,
+    "input_directory" : "./",
+    "first" : 100204,
+    "last" : 100204,
+    "output" : "run100204.test",
+    "output_directory" : "result",
+    "feta_file" : "feta100204.dat",
+    "display_event" : 0,
+    "soglia_cm" : 5.0 ,
+    "cut" : [25.0 ,25.0 ,25.0, 40.0 ],
+    "cut_low" : [5.0 ,5.0 ,5.0, 5.0 ],
+    "pitch" : 50.0 ,
+    "zone" : [2,3],
+    "angolo" : 0.0,
+    "align_x2" : -1.96,
+    "align_x13" : 0.014607
+}

@@ -58,14 +58,43 @@ extern "C" {
             (float*)&other,dummy);
   }
   
-  // //  call hf1(100000*isilicio,subraw(istrip,isilicio),1.0)
+  void hbprof(int id, std::string name,
+              int nchan_x, float_t x_min, float_t x_max,
+              float max_value=4000.) {
+    float_t dummy(0);
+    float_t min_value = 0;
+    char opt='S';
+    hbprof_(&id, &name[0], &nchan_x, (float*)&x_min,(float*)&x_max, (float*)&min_value,(float*)&max_value, &opt,0,0);
+
+  }
+
+  
   void hf1(int id, float_t x, float_t weight=1.0f) {
     hf1_(&id,&x,&weight);
   }
   void hf2(int id, float_t x, float_t y, float_t w=1.0f) {
     hf2_(&id,&x,&y,&w);
   }
+  
+  void hfill(int id, int istrip, float value,float weight = 1.0f) {
+    float fstrip=istrip;
+    hfill_(&id,&fstrip,&value,&weight);
+  }
+  
+  void hunpak(int id, float_t* x, int other=0) {
+    char c=' ';
+    hunpak_ (&id,x,&c,&other,1);
+  }
+  void hunpke(int id, float_t* x, int other=0) {
+    char c=' ';
+    hunpke_ (&id,x,&c,&other,1);
+  }
+  void hpak(int id, float_t* x) {
+    char c=' ';
+    hpak_ (&id,x);
+  }
 
+  
 }
 
 
