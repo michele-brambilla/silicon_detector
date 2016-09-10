@@ -10,7 +10,7 @@
 ////////////////////////////////
 // hbook, fortran2c
 #include "cfortran/packlib.h"
-#include "cfortran/paw.h"
+//#include "cfortran/paw.h"
 
 
 typedef float float_t;
@@ -27,6 +27,11 @@ extern "C" {
   void get_raw_data4_(float_t*,const int*);
   void get_raw_data5_(float_t*,const int*);
   void get_raw_data6_(float_t*,const int*);
+
+  // void hfill_c(int id,float x,float y, float w) {
+  //   hfill_c_(&id, &x, &y, &w);
+  // }
+  void hf1_c(int*, float*);
 }
 
 extern "C" {

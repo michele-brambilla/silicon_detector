@@ -11,8 +11,12 @@
 template<class Input>
 void subtract_commonmode(Input&, const int, const int, float);
 
-template<class Input, typename T>
+// template<class Input, typename T>
+// T compute_cm(Input&, const int, const int, const T&);
+
+template<class Input, typename T, typename Predicate>
 T compute_cm(Input&, const int, const int, const T&);
+
 
 template<class Input>
 void subtract_pedestal(Input&);
@@ -135,15 +139,42 @@ void subtract_pedestal(Input& sili) {
     }
   }
 }
+
+
+template <typename T>
+struct CMselector_pede {
+  CMselector_pede(const T& selection_cut) : c(selection_cut) { };
+  bool operator()(const T& value) const {
+    return (value > 0);
+  }
+  
+private :
+  const T& c;
+};
+
+template <typename T>
+struct CMselector_event {
+  CMselector_event(const T& selection_cut) : c(selection_cut) { };
+  bool operator()(const T& value) const {
+    return (value < c && value>0);
+    //    return false;
+  }
+  
+private :
+  const T& c;
+};
+
 //////////////////////
 // Assume adc gia' sottratta del pede e "spente" le strip "morte"; calcola il cm e lo ritorna
-template<class Input, typename T>
+template<class Input, typename T,template <typename Type> class Predicate>
 T compute_cm(Input& sili, const int first, const int last, const T& cut) {
 
+  Predicate<T> Pred(cut);
   float tmp_cm = 0;
   int n=0;
   for(int i = first;i<last;++i) {
-    if(sili.value[i] < 1.*cut && sili.value[i]>0) {
+    //    if(sili.value[i] < 1.*cut && sili.value[i]>0) {
+    if( Pred(sili.value[i]) ) {
       tmp_cm += sili.value[i];
       n++;
     } 

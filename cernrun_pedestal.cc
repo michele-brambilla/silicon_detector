@@ -57,6 +57,9 @@ int main(int argc, char **argv) {
   sili.push_back(types::silicio<Nstrip>(pede[1],rms[1],status[1]));
   sili.push_back(types::silicio<Nstrip>(pede[3],rms[3],status[3]));
   sili.push_back(types::silicio<Nstrip>(pede[4],rms[4],status[4]));
+
+
+  std::array<float,384> mean_p, mean_p2;
   
   /////////////////////////
   // Inizializzo il file di output
@@ -90,16 +93,15 @@ int main(int argc, char **argv) {
       return ierr;
 
     get_raw_data1_(&sili[0].value[0], &offset);
-    get_raw_data2_(&sili[1].value[1], &offset);
-    get_raw_data5_(&sili[2].value[2], &offset);
-    get_raw_data6_(&sili[3].value[3], &offset);
-
-    
+    get_raw_data2_(&sili[1].value[0], &offset);
+    get_raw_data5_(&sili[2].value[0], &offset);
+    get_raw_data6_(&sili[3].value[0], &offset);
+  
     //////////////////
     // riempie profile histo
-    for(int i=0;i<4;++i)
+    for(int isili=0;isili<Nsili;++isili)
       for(int istrip=0;istrip<384;++istrip) {
-        hfill(100+i,istrip,sili[i].value[istrip]);
+        hfill(100+isili,istrip,sili[isili].value[istrip]);
       }
   }
 
@@ -113,10 +115,17 @@ int main(int argc, char **argv) {
     hunpke(100+i,&rms[i][0]);
   }
 
-
+  std::ofstream os("pede.prova");
   for(int isili=0;isili<Nsili;++isili) {
-    float avg = std::accumulate(rms[isili].begin(),rms[isili].end(),0.)/rms[isili].size();
-    float avg2 = std::inner_product(rms[isili].begin(),rms[isili].end(),rms[isili].begin(),0.)/rms[isili].size();
+    for(int istrip=0;istrip<384;++istrip) {
+      os << pede[isili][istrip] << "\t" << rms[isili][istrip] << std::endl;
+    }
+  }
+  os.close();
+  
+  for(int isili=0;isili<Nsili;++isili) {
+    float avg = std::accumulate(sili[isili].begin(),sili[isili].end(),0.)/sili[isili].value.size();
+    float avg2 = std::inner_product(sili[isili].begin(),sili[isili].end(),sili[isili].begin(),0.)/sili[isili].value.size();
     float sd = sqrt(avg2 - avg*avg);
     std::cout << "avg = " << avg
               << "sd = " << sd
@@ -132,13 +141,15 @@ int main(int argc, char **argv) {
     
   }
 
-  std::ofstream os(p["status"].GetString());
+  os.open(p["status"].GetString());
   for(int istrip=0;istrip<384;++istrip) {
     for(int isili=0;isili<Nsili;++isili)
       os << status[isili][istrip] << "\t";
     os << std::endl;
   }
   os.close();
+
+ 
   
   apri_tupla_(s.c_str(),nmax);
   if(nmax == -1) 
@@ -176,13 +187,8 @@ int main(int argc, char **argv) {
       }
 
       for(int istrip=0;istrip<384;++istrip)
-        if(!status[isili][istrip])
-          sili[isili].value[istrip] -= cm[istrip/128];
-      
-
-      for(int istrip=0;istrip<384;++istrip)
         if(!status[isili][istrip]) {
-          hfill(200+isili,istrip,sili[isili].value[istrip]);
+          hfill(200+isili,istrip,sili[isili].value[istrip]-cm[istrip/128]);
         }
     }
   }
@@ -197,8 +203,8 @@ int main(int argc, char **argv) {
 
 
   os.open(p["pedestal"].GetString());
-  for(int istrip=0;istrip<384;++istrip) {
-    for(int isili=0;isili<Nsili;++isili)
+  for(int isili=0;isili<Nsili;++isili) {
+    for(int istrip=0;istrip<384;++istrip) 
       os << pede[isili][istrip]  << "\t"
          << rms[isili][istrip]   << "\t"
          << spede[isili][istrip] << "\t"

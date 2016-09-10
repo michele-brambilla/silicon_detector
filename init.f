@@ -164,3 +164,12 @@
       led=INFO_PLUS(2)
 
       end subroutine led_event
+
+
+      subroutine hfill_c(id,x,y,w)
+      call hfill(id,x,y,w)
+      end subroutine hfill_c
+
+      subroutine hf1_c(id,x)
+      call hf1(id,x)
+      end subroutine hf1_c
