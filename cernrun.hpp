@@ -82,11 +82,11 @@ extern "C" {
   
   void hunpak(int id, float* x, int other=0) {
     char c=' ';
-    hunpak_ (&id,x,&c,&other,1);
+    hunpak_ (&id,x,&c,&other,0);
   }
   void hunpke(int id, float* x, int other=0) {
     char c=' ';
-    hunpke_ (&id,x,&c,&other,1);
+    hunpke_ (&id,x,&c,&other,0);
   }
   void hpak(int id, float* x) {
     char c=' ';

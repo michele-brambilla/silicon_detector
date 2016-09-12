@@ -1,7 +1,7 @@
 {
     "status" : "status100183.dat",
     "pedestal" : "run100183_pede.txt",
-    "nfilemax" : 100,
+    "nfilemax" : 10,
     "input_directory" : "raw",
     "first" : 100184,
     "last" : 100184,

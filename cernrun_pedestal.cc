@@ -60,23 +60,14 @@ int main(int argc, char **argv) {
   sili.push_back(types::silicio<Nstrip>(pede[1],rms[1],status[1]));
   sili.push_back(types::silicio<Nstrip>(pede[3],rms[3],status[3]));
   sili.push_back(types::silicio<Nstrip>(pede[4],rms[4],status[4]));
-  
+
+
   /////////////////////////
   // Inizializzo il file di output
   init_( ( std::string(p["output_directory"].GetString())+"/"+
            std::string(p["output"].GetString()) ).c_str());
 
   prepara_histo(Nsili);
-  // hbprof(99,"pedestal",Nstrip,0.,384.);
-  // hbprof(100,"pedestal",Nstrip,0.,384.);
-  // hbprof(101,"pedestal",Nstrip,0.,384.);
-  // hbprof(102,"pedestal",Nstrip,0.,384.);
-  // hbprof(103,"pedestal",Nstrip,0.,384.);
-  // hbprof(200,"pedestal-cmsub",Nstrip,0.,384.);
-  // hbprof(201,"pedestal-cmsub",Nstrip,0.,384.);
-  // hbprof(202,"pedestal-cmsub",Nstrip,0.,384.);
-  // hbprof(203,"pedestal-cmsub",Nstrip,0.,384.);
-
 
   int nmax=-1;
   
@@ -156,11 +147,15 @@ int main(int argc, char **argv) {
     os << std::endl;
   }
   os.close();
+
+  prepara_histo(Nsili);
   
   apri_tupla_(s.c_str(),nmax);
   if(nmax == -1) 
     return -1;
     
+  
+
   std::cout << std::endl;
   std::cout << s << std::endl;
   std::cout << "max events = " << nmax << std::endl;
@@ -175,51 +170,84 @@ int main(int argc, char **argv) {
     get_raw_data5_(&sili[2].value[0], &offset);
     get_raw_data6_(&sili[3].value[0], &offset);
 
+    for(int isili=0;isili<Nsili;++isili)  {
+    // spede = value - pede
+      std::transform(sili[isili].value.begin(),sili[isili].value.end(),
+                     pede[isili].begin(),
+                     spede[isili].begin(),
+                   std::minus<float>());    
+
+      for(int istrip=0;istrip<Nstrip;++istrip)
+        if( status[isili][istrip] )  {
+          //          sili[isili].value[istrip] = 0;
+          spede[isili][istrip] = 0;
+        }
+
+      std::vector<float> cm(3),n(3);
+      for(int iasic=0;iasic<3;++iasic) {
+        int first = 128*iasic;
+        int last = 128*(iasic+1);
+        
+        n[iasic] = 128 - std::accumulate( status[isili].begin() + first,
+                                          status[isili].begin() + last,
+                                          0.);
+        cm[iasic] = std::accumulate( spede[isili].begin() + first,
+                                     spede[isili].begin() + last,
+                                     0.)/n[iasic];
+
+        std::transform(sili[isili].begin() + first,
+                       sili[isili].begin() + last, 
+                       sili[isili].begin() + first,
+                       std::bind2nd(std::minus<float>(), cm[iasic]) );              
+      }
+
+      for(int istrip=0;istrip<Nstrip;++istrip) {
+        if( !status[isili][istrip] ) 
+          hfill(100+isili,istrip,sili[isili].value[istrip]);
+        else
+          hfill(100+isili,istrip,0);
+      }      
+      
+      
+      // for( auto x : cm )
+      //   std::cout << x << "\t";
+      // std::cout << std::endl;
+      // for( auto x : n )
+      //   std::cout << x << "\t";
+      // std::cout << std::endl;
+
+    }
+
+    // //////////////////
+    // // riempie profile histo
+    // for(int isili=0;isili<Nsili;++isili) {
+    //   for(int istrip=0;istrip<Nstrip;++istrip) {
+    //     hfill(200+isili,istrip,sili[isili].value[istrip]);
+    //   }
+    // }
     
 
-  //   std::vector<float> cm(3),n(3);
-  //   std::vector<float> t(Nstrip);
-  //   //////////////////
-  //   // riempie profile histo pede-sottratto
-  //   for(int isili=0;isili<Nsili;++isili) {
-      
-  //     for(int istrip=0;istrip<384;++istrip)
-  //       t[istrip] = sili[isili].value[istrip] - pede[isili][istrip];
-
-  //     for(int iasic=0;iasic<3;++iasic) {
-  //       cm[iasic] = std::accumulate(t.begin()+128*iasic,t.begin()+128*(iasic+1),0.);
-  //       n[iasic]  = std::accumulate(status[isili].begin()+128*iasic,status[isili].begin()+128*(iasic+1),0);
-  //       cm[iasic] /= (128-n[iasic]);
-  //     }
-
-  //     for(int istrip=0;istrip<384;++istrip)
-  //       if(!status[isili][istrip])
-  //         sili[isili].value[istrip] -= cm[istrip/128];
-      
-
-  //     for(int istrip=0;istrip<384;++istrip)
-  //       if(!status[isili][istrip]) {
-  //         hfill(200+isili,istrip,sili[isili].value[istrip]);
-  //       }
-  //   }
   }
+
+  chiudi_tupla_();
   
-  // ///////////////
-  // // riempie vettori pede e rms
-  // // con contenuto profile histo
-  // for(int i=0;i<Nsili;++i) {
-  //   hunpak(200+i,&spede[i][0]);    
-  //   hunpke(200+i,&srms[i][0]);
-  // }
+  ///////////////
+  // riempie vettori pede e rms
+  // con contenuto profile histo
+  for(int i=0;i<Nsili;++i) {
+    hunpak(100+i,&spede[i][0]);    
+    hunpke(100+i,&srms[i][0]);
+  }
 
 
   os.open(p["pedestal"].GetString());
-  for(int istrip=0;istrip<384;++istrip) {
-    for(int isili=0;isili<Nsili;++isili)
-      os << pede[isili][istrip]  << "\t"
-         << rms[isili][istrip]   << "\t"
-         << spede[isili][istrip] << "\t"
-         << srms[isili][istrip] << "\n";
+  for(int isili=0;isili<Nsili;++isili) {
+    for(int istrip=0;istrip<Nstrip;++istrip) {
+      os << std::setw(10) << pede[isili][istrip]  << "\t"
+         << std::setw(10) << rms[isili][istrip]   << "\t"
+         << std::setw(10) << spede[isili][istrip] << "\t"
+         << std::setw(10) << srms[isili][istrip]  << "\n";
+    }
   }
   os.close();
   
