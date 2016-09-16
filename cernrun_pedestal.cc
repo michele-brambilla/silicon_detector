@@ -28,6 +28,10 @@ const int n_eta_bin = 100;
 
 void prepara_histo(const int);
 
+template<typename Vector, typename Status>
+void calcola_status(const Vector&,const Vector&,Status&,float);
+
+
 
 int main(int argc, char **argv) {
 
@@ -59,6 +63,10 @@ int main(int argc, char **argv) {
   sili.push_back(types::silicio<Nstrip>(pede[4],rms[4],status[4]));
 
 
+  /////////////////
+  // output
+  std::ofstream os;
+  
   std::array<float,384> mean_p, mean_p2;
   
   /////////////////////////
@@ -115,40 +123,29 @@ int main(int argc, char **argv) {
     hunpke(100+i,&rms[i][0]);
   }
 
-  std::ofstream os("pede.prova");
-  for(int isili=0;isili<Nsili;++isili) {
-    for(int istrip=0;istrip<384;++istrip) {
-      os << pede[isili][istrip] << "\t" << rms[isili][istrip] << std::endl;
-    }
-  }
-  os.close();
+
+  for(int isili=0;isili<Nsili;++isili)
+    calcola_status(pede[isili], rms[isili], status[isili],p["dead_threshold"].GetFloat());
+
   
-  for(int isili=0;isili<Nsili;++isili) {
-    float avg = std::accumulate(sili[isili].begin(),sili[isili].end(),0.)/sili[isili].value.size();
-    float avg2 = std::inner_product(sili[isili].begin(),sili[isili].end(),sili[isili].begin(),0.)/sili[isili].value.size();
-    float sd = sqrt(avg2 - avg*avg);
-    std::cout << "avg = " << avg
-              << "sd = " << sd
-              << std::endl;
-    
-    
-    for(int istrip=0;istrip<384;++istrip) {
-      if( (rms[isili][istrip] < (avg - p["dead_threshold"].GetFloat()*sd) ) ||
-          (rms[isili][istrip] > (avg + p["dead_threshold"].GetFloat()*sd) ) ) {
-        status[isili][istrip] = true;
-      }
+  // os.open(p["status"].GetString());
+  // for(int istrip=0;istrip<384;++istrip) {
+  //   for(int isili=0;isili<Nsili;++isili)
+  //     os << status[isili][istrip] << "\t";
+  //   os << std::endl;
+  // }
+  // os.close();
+
+  std::ifstream in;
+  in.open(p["status"].GetString());
+  std::string temp;
+  for(int istrip=0;istrip<384;++istrip)
+    for(int isili=0;isili<Nsili;++isili) {
+      in >> temp;
+      status[isili][istrip] = (temp == "0" ? 0 : 1);
     }
-    
-  }
-
-  os.open(p["status"].GetString());
-  for(int istrip=0;istrip<384;++istrip) {
-    for(int isili=0;isili<Nsili;++isili)
-      os << status[isili][istrip] << "\t";
-    os << std::endl;
-  }
-  os.close();
-
+  
+  in.close();
  
   
   apri_tupla_(s.c_str(),nmax);
@@ -162,7 +159,8 @@ int main(int argc, char **argv) {
   for(int iev=1;iev<nmax;++iev) {
     hgnt_(&id,&iev,&ierr);
     if(ierr != 0) 
-      return ierr;
+      throw std::runtime_error("Errore: impossibile aprire l'evento "+std::to_string(iev));
+
 
     get_raw_data1_(&sili[0].value[0], &offset);
     get_raw_data2_(&sili[1].value[1], &offset);
@@ -170,35 +168,49 @@ int main(int argc, char **argv) {
     get_raw_data6_(&sili[3].value[3], &offset);
 
     
-
-    std::vector<float> cm(3),n(3);
-    std::vector<float> t(Nstrip);
-    //////////////////
-    // riempie profile histo pede-sottratto
-    for(int isili=0;isili<Nsili;++isili) {
-      
-      for(int istrip=0;istrip<384;++istrip)
-        t[istrip] = sili[isili].value[istrip] - pede[isili][istrip];
-
-      for(int iasic=0;iasic<3;++iasic) {
-        cm[iasic] = std::accumulate(t.begin()+128*iasic,t.begin()+128*(iasic+1),0.);
-        n[iasic]  = std::accumulate(status[isili].begin()+128*iasic,status[isili].begin()+128*(iasic+1),0);
-        cm[iasic] /= (128-n[iasic]);
-      }
-
-      for(int istrip=0;istrip<384;++istrip)
-        if(!status[isili][istrip]) {
-          hfill(200+isili,istrip,sili[isili].value[istrip]-cm[istrip/128]);
-        }
-    }
   }
+
+
+  ////////////////
+  // sottrae cm
+  std::vector<float> cm(3);
+  std::vector<int> nr(3);
+  for(int isili=0;isili<Nsili;++isili) {
+    std::fill(cm.begin(),cm.end(),0.0);
+    std::fill(nr.begin(),nr.end(),0);
+
+    for(int istrip=0;istrip<384;++istrip)
+      if(!status[isili][istrip]) {
+        cm[istrip/128] += sili[isili].value[istrip] - pede[isili][istrip];
+        nr[istrip/128]++;
+      }
+    
+    for( int iasic=0; iasic<3;++iasic)
+      cm[iasic]/=nr[iasic];
+    
+    for(int istrip=0;istrip<384;++istrip)
+      if(!status[isili][istrip]) {
+        spede[isili][istrip] = pede[isili][istrip] - cm[istrip/128];
+      }
+    
+  }
+
+
+  //////////////////
+  // riempie profile histo
+  for(int isili=0;isili<Nsili;++isili)
+    for(int istrip=0;istrip<384;++istrip) {
+      hfill(200+isili,istrip,spede[isili][istrip]* (1-status[isili][istrip]));
+    }
+  
+
   
   ///////////////
   // riempie vettori pede e rms
   // con contenuto profile histo
-  for(int i=0;i<Nsili;++i) {
-    hunpak(200+i,&spede[i][0]);    
-    hunpke(200+i,&srms[i][0]);
+  for(int isili=0;isili<Nsili;++isili) {
+    hunpak(200+isili,&spede[isili][0]);    
+    hunpke(200+isili,&srms[isili][0]);
   }
 
 
@@ -212,7 +224,8 @@ int main(int argc, char **argv) {
   }
   os.close();
   
-  
+  chiudi_tupla_();
+
   finalize_();
   return 0;
 }
@@ -230,3 +243,65 @@ void prepara_histo(const int N) {
   }
   
 }
+
+
+
+template<typename Vector, typename Status>
+void calcola_status(const Vector& pede, const Vector& rms, Status& status, float cut) {
+
+  float avg,avg2;
+  float snr,snr2,t;
+  std::vector<float> sd(3),sd_snr(3);
+  
+  for( int iasic = 0;iasic<3;++iasic) {
+    avg = std::accumulate(pede.begin()+128*iasic,
+                          pede.begin()+128*(iasic+1),
+                          0.)/128.;
+    avg2 = std::inner_product(pede.begin()+128*iasic,
+                              pede.begin()+128*(iasic+1),
+                              pede.begin()+128*iasic,
+                              0.)/128.;
+    sd[iasic] = sqrt(avg2 - avg*avg);
+    std::cout << "avg = " << avg
+              << " sd = " << sd[iasic]
+              << "\t";    
+  }
+  std::cout << std::endl;
+  
+  for( int iasic = 0;iasic<3;++iasic) {
+    snr=0;
+    snr2=0;
+    for( int istrip = 128*iasic;istrip<128*(iasic+1);++istrip) {
+      t = pede[istrip]/rms[istrip]/128.;
+        
+      snr += t;
+      snr2 += t*t;
+    }        
+    sd_snr[iasic] = sqrt((std::abs(snr*snr-snr2))/128.);
+    std::cout << "snr = " << snr
+              << " sd = " << sd_snr[iasic]
+              << "\t";
+  }
+  std::cout << std::endl;
+
+
+  
+  for(int istrip=0;istrip<384;++istrip) {
+
+    // if( (pede[istrip]/rms[istrip] < (avg - cut*sd_snr[istrip/128]) ) ||
+    //     (pede[istrip]/rms[istrip] > (avg + cut*sd_snr[istrip/128]) ) ) {
+    //   status[istrip] = true;
+    // }
+    
+    if( (pede[istrip] < (avg - cut*sd[istrip/128]) ) ||
+        (pede[istrip] > (avg + cut*sd[istrip/128]) ) ) {
+      //      std::cout << istrip << std::endl;
+      status[istrip] = true;
+    }
+
+  }
+    
+
+  
+}
+

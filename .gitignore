@@ -4,3 +4,17 @@ util
 testing
 *.kumac
 *.kumacold
+*.o
+*.gp
+*.ps
+
+
+cernrun_basculo
+cernrun_pedestal
+cernrun
+
+paw.metafile
+raw
+result
+
+*.js

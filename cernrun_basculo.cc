@@ -33,7 +33,8 @@ int main(int argc, char **argv) {
 
   int istat;
   int iev=1,ierr,id=1, run_number=1;
-
+  int hid;
+  
   rapidjson::Document p;
   rapidjson::ParseResult ok;
   if(argc>1)
@@ -150,23 +151,14 @@ int main(int argc, char **argv) {
       // std::vector<float> i2(sili[2].value);
       for(int i=0;i<Nsili;++i) {
         for( int a = 0;a<3;++a) {
-          cm[a] = compute_cm(sili[i],128*a,128*(a+1),cut_low[i]);
+          cm[a] = compute_cm<types::silicio<Nstrip>,
+                             float,
+                             CMselector_event>(sili[i],128*a,128*(a+1),cut[i]);
+
           subtract_commonmode(sili[i],128*a,128*(a+1),cm[a]);
         }
       }
 
-      // for(int i=0;i<384/4;++i)
-        // std::cout << o2[i] << "\t"
-        //           << i2[i] << "\t"
-        //           << sili[2].value[i] << "\t"
-        //           << std::endl;
-        // std::cout << sili[0].value[i] << "\t"
-        //           << sili[1].value[i] << "\t"
-        //           << sili[2].value[i] << "\t"
-        //           << sili[3].value[i] << "\t"
-        //           << std::endl;
-      // continue;
-      
       for(int i=0;i<Nsili;++i){      
 
         sili[i].process();
