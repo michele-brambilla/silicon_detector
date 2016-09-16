@@ -44,5 +44,5 @@ $(exe): $(mains) $(objects_fortran)  $(objects_cxx) $(headers)
 .PHONY : clean
 
 clean:
-	\rm *.o cernrun
+	\rm *.o cernrun_pedestal cernrun_basculo
 
