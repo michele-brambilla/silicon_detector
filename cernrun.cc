@@ -46,16 +46,18 @@ int main(int argc, char **argv) {
 
   std:: cout << "nfilemax\t" << p["nfilemax"].GetInt() << std::endl;
   
-  //////////////////////////////
-  // status
-  types::status<Nsili_raw,Nstrip> st;
-  st(p["status"].GetString());
 
   types::pedestal<Nsili_raw,Nstrip> spede;
   types::rms<Nsili_raw,Nstrip> srms;
   spede(p["pedestal"].GetString());
-  srms(p["pedestal"].GetString());x
+  srms(p["pedestal"].GetString());
 
+  //////////////////////////////
+  // status
+  types::status<Nsili_raw,Nstrip> st;
+  //  st(p["status"].GetString());
+  st(spede);
+  
   std::vector< types::silicio<Nstrip> > sili;
   sili.push_back(types::silicio<Nstrip>(spede[0],srms[0],st[0]));
   sili.push_back(types::silicio<Nstrip>(spede[2],srms[2],st[2]));

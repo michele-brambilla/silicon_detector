@@ -29,16 +29,14 @@ namespace types {
       float dummy0,dummy1,dummy2;
       float value;
       std::ifstream is(filename.c_str());
-      //      if(!is.is_good()) return 1;
+      if( !is.good() )
+        throw std::runtime_error("Errore: file di pede non valido");
 
       for(int isili=0;isili<Nr;++isili) {
         for(int istrip=0;istrip<Nc;++istrip) {
           is >> dummy0 >> dummy1 >> value >> dummy2;
-          //          std::cout << value << "\t";
           s[isili][istrip]=static_cast<float>(value);
         }
-        // std::cin >> value;
-        // std::cout << std::endl;
       }
       return 0;
     }
@@ -69,7 +67,7 @@ namespace types {
       float dummy0,dummy1,dummy2;
       float value;
       std::ifstream is(filename.c_str());
-      //      if(!is.is_good()) return 1;
+      throw std::runtime_error("Errore: file di rms non valido");
 
       for(int isili=0;isili<Nr;++isili) {
         for(int istrip=0;istrip<Nc;++istrip) {

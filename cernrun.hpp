@@ -21,6 +21,7 @@ extern "C" {
   int chiudi_tupla_();
   void finalize_(void);
   void get_raw_data_(float_t*,float_t*,float_t*,const int*);
+  void hfill_f_(int*,float*,float*,float*)
 }
 
 extern "C" {
@@ -60,6 +61,10 @@ extern "C" {
     hf2_(&id,&x,&y,&w);
   }
 
+
+  void hfill_f(int id,float_t x, float_t y, float_t w=1.0f) {
+    hfill_f_(&id,&x,&y,&w);
+  }
 }
 
 

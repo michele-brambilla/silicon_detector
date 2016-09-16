@@ -96,3 +96,11 @@
       led=INFO_PLUS(2)
 
       end subroutine led_event
+
+
+*      hfill(8000,betax,betay,1.)
+      subroutine hfill_f(id,x,y,w)
+      integer id
+      real x,y,w
+      call hfill(id,x,y,w)
+      end subroutine hfill_f

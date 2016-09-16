@@ -4,16 +4,18 @@ AR=ar rcs
 .SUFFIXES: 
 .SUFFIXES: .f .o
 
-LIBS += -lpawlib -lpacklib -lgfortran
+CXX = clang++ -std=c++11
+FF = gfortran-mp-4.9
 
 CXXFLAGS = -O0 -m64 -I/sw/include -I/sw/include/cfortran -ggdb -DDO_DEBUG -Wcpp
 FFLAGS = -O0 -m64 -ggdb
 
-LDFLAGS = -L/opt/local/lib/gcc49/ -L/sw/lib/ -L/usr/lib
+LIBS +=
+LDFLAGS = 
 
-#CXX = clang++-mp-3.5 -std=c++11
-CXX = g++-mp-4.9 -std=c++11
-FF = gfortran-mp-4.9
+INC = -Irapidjson/include
+
+
 
 headers := types.hpp util.hpp cernrun.hpp uparam.hpp pede_rms.hpp silicio.hpp algo.hpp cluster.hpp
 
@@ -25,6 +27,9 @@ mains := cernrun.o
 exe := $(patsubst %.o,%,$(mains))
 
 all: $(exe)
+
+dummy : dummy.cc
+	$(CXX) $(CXXLAGS) $(LIBS) $(LDFLAGS) -o dummy dummy.cc $(INC)
 
 $(objects_fortran): %.o : %.f $(headers)
 	$(FF) $(FFLAGS) -c $< -I.
