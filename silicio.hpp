@@ -79,8 +79,8 @@ namespace types {
     
     void process() {
       compute_snr(value.begin(),value.end(),srms.begin(),snr.begin());
-      ph_max=algo::max_value(begin(),end());
-      pull=algo::max_value(snr.begin(),snr.end());
+      ph_max=std::max_element(value.begin(),value.end());
+      pull=std::max_element(snr.begin(),snr.end());
       eta=algo::eta(begin(),end(),begin()+std::distance(snr.begin(),pull));
     }
 

@@ -11,6 +11,12 @@
 
       call hldir('//','')
 
+      print *, "hplint"
+      CALL HPLINT(7879)
+      print *, "hplcap"
+      CALL HPLCAP(0)
+      CALL HPLZON (2, 2, 1, '')      
+      print *,"fine init"
       end function init
 
 
@@ -25,6 +31,8 @@
       call hrend('analisi')
       close(2)
 
+      CALL HPLEND
+
       end function finalize
 
 
@@ -37,7 +45,7 @@
       integer nmax,istat
       character*50 tname
 
-      print *,"file = ",trim(tname(1:21))
+      print *,"file = ",tname
       call hropen(40,'dati',tname,'',4096,istat)
 
       if (istat.eq.0) then
@@ -164,3 +172,16 @@
       led=INFO_PLUS(2)
 
       end subroutine led_event
+
+
+
+      function plot(id)
+      include 'common.inc'
+
+      integer,intent(in) :: id
+
+      print *,"hplot"
+      CALL HPLOT(id,' ',' ',0)
+      print *,"fine hplot"
+
+      end function plot

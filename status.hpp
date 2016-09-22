@@ -1,8 +1,11 @@
-
 #include <iostream>
 #include <array>
 #include <fstream>
+#include <sstream>
 #include <string>
+#include <iterator>
+
+
 
 namespace types {
   
@@ -59,3 +62,30 @@ namespace types {
 
 
 }
+
+template<int Nsili,int Nstrip>
+void read_status(types::status<Nsili,Nstrip>& status, const std::string& s) {
+
+  std::ifstream is(s);
+  int istrip=0;
+
+  if( !is.good() )
+    throw std::runtime_error("Impossibile aprere il file di stato");
+
+  std::string line;
+  while(is.good() && (istrip < Nstrip) ) {
+    std::getline(is,line);
+    std::istringstream ss(line);
+    std::vector <float> record;
+    while (ss) {
+      std::string item;
+      if (!std::getline( ss, item, '\t' )) break;
+      record.push_back(std::stoi(item));
+    }
+    for(int isili=0;isili<Nsili;++isili)
+      status[isili][istrip] = record[isili];
+    istrip++;
+  }
+  is.close();
+}
+

@@ -8,7 +8,7 @@ AR=ar rcs
 CXXFLAGS = -O3 -DDO_DEBUG #-ggdb -O0
 FFLAGS = -O3 #-ggdb -O0
 
-LIBS += -lpawlib -lpacklib -lgfortran
+LIBS += -lpawlib -lpacklib -lgfortran -lgraflib
 LDFLAGS = -L/opt/local/lib/gcc49/ -L/sw/lib/ -L/usr/lib
 
 INCLUDE = -I/sw/include -I/sw/include/cfortran -Wcpp -Irapidjson/include
@@ -18,12 +18,12 @@ INCLUDE = -I/sw/include -I/sw/include/cfortran -Wcpp -Irapidjson/include
 CXX = g++-4.8 -std=c++11 --fast-math -Wno-cpp -Df2cFortran
 FF = gfortran-4.8 -Df2cFortran
 
-headers := types.hpp util.hpp cernrun.hpp uparam.hpp pede_rms.hpp silicio.hpp algo.hpp cluster.hpp
+headers := types.hpp util.hpp cernrun.hpp uparam.hpp pede_rms.hpp silicio.hpp algo.hpp cluster.hpp status.hpp
 
 objects_fortran := init.o prepara_histo.o
 objects_cxx := pedestal.o
 
-mains := cernrun_basculo.o cernrun_pedestal.o
+mains := basculo.o
 
 exe := $(patsubst %.o,%,$(mains))
 
