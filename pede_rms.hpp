@@ -85,32 +85,3 @@ namespace types {
 }
 
 
-template<typename detector_t>
-void read_pede(detector_t& sili, const std::string& s) {
-  int Nsili = sili.size();
-  int Nstrip = sili[0].value.size();
-
-  std::ifstream is;
-  is.open(s);
-  int c=0,value,dummy;
-  if( !is.good() )
-    throw std::runtime_error("Impossibile aprere il file di stato");
-  
-  std::string line;  
-  while(is.good() && (c/Nstrip < Nsili) ) {
-    std::getline(is,line);
-    std::istringstream ss(line);
-    std::vector <float> record;
-    while (ss) {
-      std::string item;
-
-      if (!std::getline( ss, item, '\t' )) break;
-      record.push_back(std::stof(item));
-    }
-    sili[c/Nstrip].spede[c%Nstrip] = record[2];
-    sili[c/Nstrip].srms[c%Nstrip]  = record[3];
-    c++;
-  }
-  
-  is.close();
-}

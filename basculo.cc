@@ -20,11 +20,19 @@
 const int Nsili_raw=5;
 const int offset=4;
 
+const int Nstrip=384;
+const int Nsili=4;
 
+
+typedef typename std::vector< types::silicio<Nstrip> > detector_t;
+
+void read_pede(detector_t&, const std::string&);
+void read_status(types::status<Nsili,Nstrip>&, const std::string&);
+
+void pre_process(types::silicio<Nstrip>&, const float&);
 
 int main(int argc, char **argv) {
 
-  typedef typename std::vector< types::silicio<Nstrip> > detector_t;
   detector_t sili;
   types::pedestal<Nsili,Nstrip> spede;
   types::rms<Nsili,Nstrip> srms;
@@ -42,11 +50,13 @@ int main(int argc, char **argv) {
     throw std::runtime_error("Errore: file di configurazione non valido");
   }
 
-  for(int isili=0;isili<Nsili;++isili)
-    sili.push_back(types::silicio<Nstrip>(spede[0],srms[0],status[0]));
+  sili.push_back(types::silicio<Nstrip>(spede[0],srms[0],status[0]));
+  sili.push_back(types::silicio<Nstrip>(spede[1],srms[1],status[1]));
+  sili.push_back(types::silicio<Nstrip>(spede[2],srms[2],status[2]));
+  sili.push_back(types::silicio<Nstrip>(spede[3],srms[3],status[3]));
 
-  read_pede<detector_t>(sili,p["pedestal"].GetString());
-  read_status<Nsili,Nstrip>(status,p["status"].GetString());
+  read_pede(sili,p["pedestal"].GetString());
+  read_status(status,p["status"].GetString());
 
 
   float pitch = p["pitch"].GetFloat();
@@ -67,13 +77,8 @@ int main(int argc, char **argv) {
            std::string(p["output"].GetString()) ).c_str());
 
   prepara_histo(Nsili);
-
-    for(int isili=0;isili<Nsili;++isili)
-      hplot(110+isili);
-    
-    int pause;
-    std::cin >> pause;
-
+  
+  
 
   // std::ifstream feta_in(p["feta_file"].GetString());
   // if ( feta_in.good() ) {
@@ -147,12 +152,14 @@ int main(int argc, char **argv) {
                        sili[isili].value.begin(),
                        [&](float arg1, bool arg2) { 
                          return (arg2 > 0? arg1 : 0.0); });
-        
+
+
         // subtracts pede
         std::transform(sili[isili].value.begin(),sili[isili].value.end(),
                        sili[isili].spede.begin(),
                        gap.begin(),
                        std::minus<float>());
+
         
         {
           const int Nasic=3;
@@ -172,37 +179,64 @@ int main(int argc, char **argv) {
           }
         }
 
-        sili[isili].process();
-        // std::cout << (*sili[isili].ph_max) << "\t" 
-        //           << (*sili[isili].pull  ) << "\t" 
-        //           <<   sili[isili].eta     << "\t" 
-        //           << std::endl;
-        hfill( 100+isili,(*sili[isili].ph_max),1.);
-        hfill( 110+isili,(*sili[isili].pull),1.);
-
-
-        std::vector<algo::cluster_data> c = algo::clusterize(sili[isili],cut[isili]);
-        hf1(180+isili,c.size()); // numero di cluster
-
-        if(c.size() > 0 ) {
-          
-          
-          // for ( auto& cc : c ) {
-          //   algo::process_cluster<types::silicio<Nstrip> >(cc, sili[isili],cut_low[isili],pitch);
-          //   cc.fill_histo(isili,pitch);
-          //   //            if(cc.end - cc.begin == 2)
-          //   cc.fill_histo_hit(isili,pitch);
-          // }
+        // snr
+        std::transform(sili[isili].value.begin(),sili[isili].value.end(),
+                       sili[isili].srms.begin(),
+                       sili[isili].snr.begin(),
+                       std::divides<float>());
         
-        }
+
+        // for(auto& x: sili[isili].value)
+        //   std::cout <<isili << "\t" << x << std::endl;
+
+        // std::cout << isili << sili.size() << "\t" << sili[isili].value.size() << std::endl;
+        // std::cout << *std::max_element(sili[isili].value.begin(),
+        //                                sili[isili].value.end()
+        //                                ) << std::endl;
+        // std::cout << *std::max_element(sili[isili].snr.begin(),
+        //                                sili[isili].snr.end()
+        //                                ) << std::endl;
+
+
+        //        sili[isili].process();
+        // std::cout << *std::max_element(sili[isili].value.begin(),
+        //                                sili[isili].value.end()) << "\t" 
+                  // << (*sili[isili].pull  ) << "\t" 
+                  // <<   sili[isili].eta     << "\t" 
+                  // << std::endl;
+        hfill( 100+isili, *std::max_element(sili[isili].value.begin(),
+                                            sili[isili].value.end()) ,1.);
+        hfill( 110+isili, *std::max_element(sili[isili].snr.begin(),
+                                            sili[isili].snr.end()) ,1.);
+
+
+
+        // std::vector<algo::cluster_data> c = algo::clusterize(sili[isili],cut[isili]);
+        // hf1(180+isili,c.size()); // numero di cluster
+
+        // if(c.size() > 0 ) {
+          
+          
+        //   // for ( auto& cc : c ) {
+        //   //   algo::process_cluster<types::silicio<Nstrip> >(cc, sili[isili],cut_low[isili],pitch);
+        //   //   cc.fill_histo(isili,pitch);
+        //   //   //            if(cc.end - cc.begin == 2)
+        //   //   cc.fill_histo_hit(isili,pitch);
+        //   // }
+        
+        // }
       } // Nsili
+    
       
     }
+    for(int isili=0;isili<Nsili;++isili)
+      hplot(110+isili);
+    
+    int pause;
+    std::cin >> pause;
+    continue;
 
-    
-    
-    
-    
+
     chiudi_tupla_();
     
   //   //    std::cout << run_number << "\t" <<  atoi(p["nfilemax"].c_str()) << "\t" << istat << std::endl; 
@@ -232,3 +266,101 @@ int main(int argc, char **argv) {
 
 
 
+void read_pede(detector_t& sili, const std::string& s) {
+
+  std::ifstream is;
+  is.open(s);
+  int c=0,value,dummy;
+  if( !is.good() )
+    throw std::runtime_error("Impossibile aprere il file di stato");
+  
+  std::string line;  
+  while(is.good() && (c/Nstrip < Nsili) ) {
+    std::getline(is,line);
+    std::istringstream ss(line);
+    std::vector <float> record;
+    while (ss) {
+      std::string item;
+
+      if (!std::getline( ss, item, '\t' )) break;
+      record.push_back(std::stof(item));
+    }
+    sili[c/Nstrip].spede[c%Nstrip] = record[2];
+    sili[c/Nstrip].srms[c%Nstrip]  = record[3];
+    c++;
+  }
+  
+  is.close();
+}
+
+
+void read_status(types::status<Nsili,Nstrip>& status, const std::string& s) {
+
+  std::ifstream is(s);
+  int istrip=0;
+
+  if( !is.good() )
+    throw std::runtime_error("Impossibile aprere il file di stato");
+
+  std::string line;
+  while(is.good() && (istrip < Nstrip) ) {
+    std::getline(is,line);
+    std::istringstream ss(line);
+    std::vector <float> record;
+    while (ss) {
+      std::string item;
+      if (!std::getline( ss, item, '\t' )) break;
+      record.push_back(std::stoi(item));
+    }
+    for(int isili=0;isili<Nsili;++isili)
+      status[isili][istrip] = record[isili];
+    istrip++;
+  }
+  is.close();
+}
+
+
+
+void pre_process(types::silicio<Nstrip>& sili, const float& soglia) {
+  std::array<float,Nstrip> gap;
+
+  // zeros dead strips
+  std::transform(sili.value.begin(),sili.value.end(),
+                 sili.spede.begin(),
+                 sili.value.begin(),
+                 [&](float arg1, bool arg2) { 
+                   return (arg2 > 0? arg1 : 0.0); });
+
+
+  // subtracts pede
+  std::transform(sili.value.begin(),sili.value.end(),
+                 sili.spede.begin(),
+                 gap.begin(),
+                 std::minus<float>());
+
+        
+  {
+    const int Nasic=3;
+    std::array<float,Nasic> cm,n;
+    for(int iasic=0;iasic<Nasic;++iasic) {
+            
+      for(int istrip = 128*iasic; istrip < 128*(iasic+1);++istrip)
+        if( gap[istrip] <soglia*sili.srms[istrip] && !sili.status[istrip] ) {
+          cm[iasic] += gap[istrip];
+          n[iasic]++;
+        }
+      cm[iasic]/=n[iasic];
+      for(int istrip = 128*iasic; istrip < 128*(iasic+1);++istrip)
+        if(!sili.status[istrip])
+          sili.value[istrip] = gap[istrip] - cm[iasic];
+            
+    }
+  }
+
+  // snr
+  std::transform(sili.value.begin(),sili.value.end(),
+                 sili.srms.begin(),
+                 sili.snr.begin(),
+                 std::divides<float>());
+
+} // pre_process
