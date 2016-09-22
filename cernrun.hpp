@@ -183,12 +183,13 @@ void prepara_histo(const int N) {
   hbook1(183,std::string("nr_cluster"  )+"2y",6,-.5,5.);
   }
   
-  int l[1000],n=0;
-  hid1_(l,&n);
-  for(int i=0;i<n;++i)
-    std::cout << l[i] << std::endl;
+  // int l[1000],n=0;
+  // hid1_(l,&n);
+  // for(int i=0;i<n;++i)
+  //   std::cout << l[i] << std::endl;
 
-  std::cin >> n;
+  // std::cin >> n;
+
 }
 
 

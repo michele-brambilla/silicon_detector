@@ -146,44 +146,46 @@ int main(int argc, char **argv) {
 
       for(int isili=0;isili < Nsili;++isili) {
 
-        // zeros dead strips
-        std::transform(sili[isili].value.begin(),sili[isili].value.end(),
-                       sili[isili].spede.begin(),
-                       sili[isili].value.begin(),
-                       [&](float arg1, bool arg2) { 
-                         return (arg2 > 0? arg1 : 0.0); });
+        // // zeros dead strips
+        // std::transform(sili[isili].value.begin(),sili[isili].value.end(),
+        //                sili[isili].spede.begin(),
+        //                sili[isili].value.begin(),
+        //                [&](float arg1, bool arg2) { 
+        //                  return (arg2 > 0? arg1 : 0.0); });
 
 
-        // subtracts pede
-        std::transform(sili[isili].value.begin(),sili[isili].value.end(),
-                       sili[isili].spede.begin(),
-                       gap.begin(),
-                       std::minus<float>());
+        // // subtracts pede
+        // std::transform(sili[isili].value.begin(),sili[isili].value.end(),
+        //                sili[isili].spede.begin(),
+        //                gap.begin(),
+        //                std::minus<float>());
 
         
-        {
-          const int Nasic=3;
-          std::array<float,Nasic> cm,n;
-          for(int iasic=0;iasic<Nasic;++iasic) {
+        // {
+        //   const int Nasic=3;
+        //   std::array<float,Nasic> cm,n;
+        //   for(int iasic=0;iasic<Nasic;++iasic) {
             
-            for(int istrip = 128*iasic; istrip < 128*(iasic+1);++istrip)
-              if( gap[istrip] < p["soglia_cm"].GetFloat()*sili[isili].srms[istrip] && !sili[isili].status[istrip] ) {
-                cm[iasic] += gap[istrip];
-                n[iasic]++;
-              }
-            cm[iasic]/=n[iasic];
-            for(int istrip = 128*iasic; istrip < 128*(iasic+1);++istrip)
-              if(!sili[isili].status[istrip])
-                sili[isili].value[istrip] = gap[istrip] - cm[iasic];
+        //     for(int istrip = 128*iasic; istrip < 128*(iasic+1);++istrip)
+        //       if( gap[istrip] < p["soglia_cm"].GetFloat()*sili[isili].srms[istrip] && !sili[isili].status[istrip] ) {
+        //         cm[iasic] += gap[istrip];
+        //         n[iasic]++;
+        //       }
+        //     cm[iasic]/=n[iasic];
+        //     for(int istrip = 128*iasic; istrip < 128*(iasic+1);++istrip)
+        //       if(!sili[isili].status[istrip])
+        //         sili[isili].value[istrip] = gap[istrip] - cm[iasic];
             
-          }
-        }
+        //   }
+        // }
 
-        // snr
-        std::transform(sili[isili].value.begin(),sili[isili].value.end(),
-                       sili[isili].srms.begin(),
-                       sili[isili].snr.begin(),
-                       std::divides<float>());
+        // // snr
+        // std::transform(sili[isili].value.begin(),sili[isili].value.end(),
+        //                sili[isili].srms.begin(),
+        //                sili[isili].snr.begin(),
+        //                std::divides<float>());
+
+        pre_process(sili[isili],p["soglia_cm"].GetFloat());
         
 
         // for(auto& x: sili[isili].value)
@@ -193,9 +195,16 @@ int main(int argc, char **argv) {
         // std::cout << *std::max_element(sili[isili].value.begin(),
         //                                sili[isili].value.end()
         //                                ) << std::endl;
+        // std::cout << *std::max_element(sili[isili].srms.begin(),
+        //                                sili[isili].srms.end()
+        //                                ) << std::endl;
         // std::cout << *std::max_element(sili[isili].snr.begin(),
         //                                sili[isili].snr.end()
         //                                ) << std::endl;
+
+    // int pause;
+    // std::cin >> pause;
+    // continue;
 
 
         //        sili[isili].process();
@@ -361,6 +370,7 @@ void pre_process(types::silicio<Nstrip>& sili, const float& soglia) {
   std::transform(sili.value.begin(),sili.value.end(),
                  sili.srms.begin(),
                  sili.snr.begin(),
-                 std::divides<float>());
+                 [&](float n, float d) { 
+                   return (d > 0? n/d : 0.0); });
 
 } // pre_process
