@@ -11,12 +11,12 @@
 
       call hldir('//','')
 
-      print *, "hplint"
-      CALL HPLINT(7879)
-      print *, "hplcap"
-      CALL HPLCAP(0)
-      CALL HPLZON (2, 2, 1, '')      
-      print *,"fine init"
+*      print *, "hplint"
+*      CALL HPLINT(7879)
+*      print *, "hplcap"
+*      CALL HPLCAP(0)
+*      CALL HPLZON (2, 2, 1, '')      
+*      print *,"fine init"
       end function init
 
 

@@ -57,9 +57,24 @@ namespace algo {
   std::vector<cluster_data>  clusterize(S& s,
                    float cut) {
 
+    std::vector<float> app(s.value.size());
+    std::transform(s.value.begin(),s.value.end(),
+                   s.srms.begin(),
+                   app.begin(),
+                   [&](float value,float noise) { return (value > (cut*noise) ? value : 0.0); }
+                   );
+    // for(int i = 0; i < app.size(); ++i)
+    //   std::cout << s.value[i] << "\t"
+    //             << s.srms[i] << "\t"
+    //             << app[i] << "\t"
+    //             << std::endl;
+    
+    // std :: cout << std::count_if(app.begin(),app.end(),[&](float x){ return (x > 0.0); }) << std::endl;
+    
     std::vector<cluster_data> cluster;
     cluster_data c;
     
+
     bool in_cluster = false;
     int last_good = -1;
     typename S::array_f::iterator rms = s.srms.begin();
