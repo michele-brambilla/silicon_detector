@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
   // Esegue l'analisi (finche' ci sono files o fino al limite stabilito
 
   int istat;
-  int iev=1,ierr,id=1, run_number=1;
+  int iev=1,ierr,id=1, run_number=0;
 
 
   do {
@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
     }
     
     s.resize(s.size());
-    std::cout << s << std::endl;
+    std::cerr << s << std::endl;
 
     apri_tupla_(s.c_str(),nmax);
     //    apri_tupla(s,nmax);
@@ -126,9 +126,9 @@ int main(int argc, char **argv) {
     if(nmax == -1) 
       return -1;
     
-    std::cout << std::endl;
-    std::cout << s << std::endl;
-    std::cout << "max events = " << nmax << std::endl;
+    std::cerr << std::endl;
+    std::cerr << s << std::endl;
+    std::cerr << "max events = " << nmax << std::endl;
     
     for(int iev=1;iev<nmax;++iev) {
       hgnt_(&id,&iev,&ierr);
@@ -147,19 +147,22 @@ int main(int argc, char **argv) {
       for(int isili=0;isili < Nsili;++isili) {
 
         pre_process(sili[isili],p["soglia_cm"].GetFloat());
-        
-        hfill( 100+isili, *std::max_element(sili[isili].value.begin(),
-                                            sili[isili].value.end()) ,1.);
-        hfill( 110+isili, *std::max_element(sili[isili].snr.begin(),
-                                            sili[isili].snr.end()) ,1.);
 
+        std::vector<float>::iterator pull = std::max_element(sili[isili].snr.begin(), sili[isili].snr.end());
+        int ipull = std::distance(sili[isili].snr.begin(), pull);
+        
+        if( (*pull) > cut[isili] ) {
+          hfill( 100+isili, *std::max_element(sili[isili].value.begin(),
+                                              sili[isili].value.end()) ,1.);
+          hfill( 110+isili, *pull, 1.);
+        }
+        
 
         // std::cout << "sili nr = " << isili << "\tcut = " << cut[isili] << std::endl;
-        // std::vector<algo::cluster_data> c = algo::clusterize(sili[isili],cut[isili]);
+        std::vector<algo::cluster_data> c = algo::clusterize(sili[isili],cut[isili]);
         // std::cout << "sili nr = " << isili << "\tnr cluster = "  << c.size() << std::endl;
 
-
-        // hf1(180+isili,c.size()); // numero di cluster
+        hf1(180+isili,c.size()); // numero di cluster
 
         // if(c.size() > 0 ) {
           
@@ -180,14 +183,16 @@ int main(int argc, char **argv) {
       
       
     }
-    // for(int isili=0;isili<Nsili;++isili)
-    //   hplot(110+isili);
+
+    for(int isili=0;isili<Nsili;++isili)
+      hplot(180+isili);
     
-    // int pause;
-    // std::cin >> pause;
-    // continue;
-
-
+    
+    // if(run_number % 50 == 0) {
+    //   for(int isili=0;isili<Nsili;++isili)
+    //     hplot(110+isili);
+    // }
+    
     chiudi_tupla_();
     
   //   //    std::cout << run_number << "\t" <<  atoi(p["nfilemax"].c_str()) << "\t" << istat << std::endl; 

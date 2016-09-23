@@ -8,10 +8,13 @@ AR=ar rcs
 CXXFLAGS = -O3 -DDO_DEBUG #-ggdb -O0
 FFLAGS = -O3 #-ggdb -O0
 
-LIBS += -lpawlib -lpacklib -lgfortran -lgraflib
-LDFLAGS = -L/opt/local/lib/gcc49/ -L/sw/lib/ -L/usr/lib
+LIBS += `cernlib -safe pawlib packlib graflib` -lgfortran
+LDFLAGS =  -L/usr/lib
 
-INCLUDE = -I/sw/include -I/sw/include/cfortran -Wcpp -Irapidjson/include
+#LIBS += `cernlib -safe pawlib packlib` -lgfortran
+#LDFLAGS = -static -L/usr/lib
+
+INCLUDE = -Wcpp -Irapidjson/include
 
 
 #CXX = clang++-mp-3.5 -std=c++11
@@ -44,5 +47,5 @@ $(exe): $(mains) $(objects_fortran)  $(objects_cxx) $(headers)
 .PHONY : clean
 
 clean:
-	\rm *.o cernrun_pedestal cernrun_basculo
+	\rm *.o basculo
 

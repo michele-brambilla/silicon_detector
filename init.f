@@ -2,21 +2,21 @@
 *     Crea il file "oname" dove verranno messi gli hi
       function init(oname)
 
-      common/pawc/h(99999999)      
+      common/pawc/h(999999)      
       include 'common.inc'
       character*50 oname
 
-      call hlimit(99999999)
+      call hlimit(999999)
       call hropen(2,'analisi',oname,'N',4096,istat)
 
       call hldir('//','')
 
-*      print *, "hplint"
-*      CALL HPLINT(7879)
-*      print *, "hplcap"
-*      CALL HPLCAP(0)
-*      CALL HPLZON (2, 2, 1, '')      
-*      print *,"fine init"
+      print *, "hplint"
+      CALL HPLINT(7879)
+      print *, "hplcap"
+      CALL HPLCAP(0)
+      CALL HPLZON (2, 2, 1, '')      
+      print *,"fine init"
       end function init
 
 
@@ -45,7 +45,8 @@
       integer nmax,istat
       character*50 tname
 
-      print *,"file = ",tname
+      write(0,*) "file = ",tname
+*      print *,"file = ",tname
       call hropen(40,'dati',tname,'',4096,istat)
 
       if (istat.eq.0) then
@@ -53,12 +54,14 @@
          call hbname(1,' ',0,'$clear')
          call hbname(1,'VFASNTUP',IEVENT,'$set')
          call hnoent(1,nmax)
-         print *,'n events = ', nmax
+         write (0,*)'n events = ', nmax
+*         print *,'n events = ', nmax
       else
-         print *,"Impossibile aprire il file",tname
+         write(0,*) "Impossibile aprire il file",tname
+*         print *,"Impossibile aprire il file",tname
       endif
 
-      call hldir('//','')
+*      call hldir('//','')
       
       end subroutine apri_tupla
 
@@ -180,8 +183,8 @@
 
       integer,intent(in) :: id
 
-      print *,"hplot"
+*      print *,"hplot"
       CALL HPLOT(id,' ',' ',0)
-      print *,"fine hplot"
+*      print *,"fine hplot"
 
       end function plot
