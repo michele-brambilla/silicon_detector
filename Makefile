@@ -8,11 +8,12 @@ AR=ar rcs
 CXXFLAGS = -O3 -DDO_DEBUG #-ggdb -O0
 FFLAGS = -O3 #-ggdb -O0
 
-LIBS += `cernlib -safe pawlib packlib graflib` -lgfortran
-LDFLAGS =  -L/usr/lib
+#LIBS += `cernlib -safe pawlib packlib graflib` -lgfortran
+#LDFLAGS =  -L/usr/lib
 
-#LIBS += `cernlib -safe pawlib packlib` -lgfortran
-#LDFLAGS = -static -L/usr/lib
+LIBS += `cernlib -safe packlib` -lgfortran
+LDFLAGS = -static -L/usr/lib
+CXXFLAGS += -DNO_PLOT
 
 INCLUDE = -Wcpp -Irapidjson/include
 
@@ -26,7 +27,7 @@ headers := types.hpp util.hpp cernrun.hpp uparam.hpp pede_rms.hpp silicio.hpp al
 objects_fortran := init.o prepara_histo.o
 objects_cxx := pedestal.o
 
-mains := basculo.o
+mains := basculo.o cernrun_pedestal.o
 
 exe := $(patsubst %.o,%,$(mains))
 

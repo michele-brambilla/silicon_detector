@@ -29,7 +29,15 @@ typedef typename std::vector< types::silicio<Nstrip> > detector_t;
 void read_pede(detector_t&, const std::string&);
 void read_status(types::status<Nsili,Nstrip>&, const std::string&);
 
-void pre_process(types::silicio<Nstrip>&, const float&);
+
+template<typename Eta_t>
+void read_eta(Eta_t&, const std::string&);
+template<typename Eta_t>
+void write_eta(Eta_t&, const std::string&);
+
+
+template<typename Silicio>
+void pre_process(Silicio&, const float&, const float&);
 
 int main(int argc, char **argv) {
 
@@ -78,22 +86,7 @@ int main(int argc, char **argv) {
 
   prepara_histo(Nsili);
   
-  
-
-  // std::ifstream feta_in(p["feta_file"].GetString());
-  // if ( feta_in.good() ) {
-  //   std::string line;
-  //   float x;
-  //   int isili = 0;
-  //   while (std::getline(feta_in, line)) {
-  //     std::istringstream iss(line);
-  //     std::vector<float> s;
-  //     while( iss >> x ) s.push_back(x);
-  //     feta[isili] = s;
-  //     isili++;
-  //   }
-  // }
-  // feta_in.close();
+  read_eta<std::array< std::vector<float>, Nsili> >(feta,p["feta_file"].GetString());
 
   
   /////////////////////
@@ -146,35 +139,30 @@ int main(int argc, char **argv) {
 
       for(int isili=0;isili < Nsili;++isili) {
 
-        pre_process(sili[isili],p["soglia_cm"].GetFloat());
-
+        pre_process<types::silicio<Nstrip> >(sili[isili],p["soglia_cm"].GetFloat(),cut[isili]);
+        // pull & ph
         std::vector<float>::iterator pull = std::max_element(sili[isili].snr.begin(), sili[isili].snr.end());
         int ipull = std::distance(sili[isili].snr.begin(), pull);
-        
-        if( (*pull) > cut[isili] ) {
+        if( (*pull) > cut[isili]) {
           hfill( 100+isili, *std::max_element(sili[isili].value.begin(),
                                               sili[isili].value.end()) ,1.);
           hfill( 110+isili, *pull, 1.);
         }
-        
-
-        // std::cout << "sili nr = " << isili << "\tcut = " << cut[isili] << std::endl;
+ 
         std::vector<algo::cluster_data> c = algo::clusterize(sili[isili],cut[isili]);
-        // std::cout << "sili nr = " << isili << "\tnr cluster = "  << c.size() << std::endl;
-
         hf1(180+isili,c.size()); // numero di cluster
 
-        // if(c.size() > 0 ) {
+        if(c.size() > 0 ) {
+                    
+          for ( auto& cc : c ) {
+            algo::process_cluster<types::silicio<Nstrip> >(cc, sili[isili],cut_low[isili],pitch);
+            cc.fill_histo(isili,pitch);
+            if(cc.end - cc.begin == 2)
+              cc.fill_histo_hit(isili,pitch);
+            
+          }
           
-          
-        //   // for ( auto& cc : c ) {
-        //   //   algo::process_cluster<types::silicio<Nstrip> >(cc, sili[isili],cut_low[isili],pitch);
-        //   //   cc.fill_histo(isili,pitch);
-        //   //   //            if(cc.end - cc.begin == 2)
-        //   //   cc.fill_histo_hit(isili,pitch);
-        //   // }
-        
-        // }
+        }
       } // Nsili
 
       // int pause;
@@ -184,8 +172,8 @@ int main(int argc, char **argv) {
       
     }
 
-    for(int isili=0;isili<Nsili;++isili)
-      hplot(180+isili);
+    // for(int isili=0;isili<Nsili;++isili)
+    //   hplot(180+isili);
     
     
     // if(run_number % 50 == 0) {
@@ -199,19 +187,7 @@ int main(int argc, char **argv) {
   } while ( ( ++run_number <= p["nfilemax"].GetInt() ) ); //&& istat==0
 
 
-  // // std::ofstream feta_out(p["feta_file"].GetString());
-  // // if ( feta_out.good() ) {
-  // //   for(int isili=0;isili<Nsili;++isili) {
-  // //     std::vector<float> se;
-  // //     hunpak_ (140+isili,&se[0],'',1)
-  // //     std::partial_sum (feta[isili].begin(), feta[isili].end(), se.begin());
-  // //     for( auto& v : se )
-  // //       feta_out << v;
-  // //     feta_out << "\n";
-  // //   }
-  // // }
-  // // feta_out.close();
-
+  write_eta(feta,p["feta_file"].GetString());
   
   finalize_();
   return 0;
@@ -276,47 +252,42 @@ void read_status(types::status<Nsili,Nstrip>& status, const std::string& s) {
 }
 
 
+template<typename Eta_t>
+void read_eta(Eta_t& feta, const std::string& filename) {
 
-void pre_process(types::silicio<Nstrip>& sili, const float& soglia) {
-  std::array<float,Nstrip> gap;
-
-  // zeros dead strips
-  std::transform(sili.value.begin(),sili.value.end(),
-                 sili.spede.begin(),
-                 sili.value.begin(),
-                 [&](float arg1, bool arg2) { 
-                   return (arg2 > 0? arg1 : 0.0); });
-
-
-  // subtracts pede
-  std::transform(sili.value.begin(),sili.value.end(),
-                 sili.spede.begin(),
-                 gap.begin(),
-                 std::minus<float>());
-        
-  {
-    const int Nasic=3;
-    std::array<float,Nasic> cm,n;
-    for(int iasic=0;iasic<Nasic;++iasic) {
-            
-      for(int istrip = 128*iasic; istrip < 128*(iasic+1);++istrip)
-        if( gap[istrip] <soglia*sili.srms[istrip] && !sili.status[istrip] ) {
-          cm[iasic] += gap[istrip];
-          n[iasic]++;
-        }
-      cm[iasic]/=n[iasic];
-      for(int istrip = 128*iasic; istrip < 128*(iasic+1);++istrip)
-        if(!sili.status[istrip])
-          sili.value[istrip] = gap[istrip] - cm[iasic];
-            
+  std::ifstream feta_in(filename);
+  if ( feta_in.good() ) {
+    std::string line;
+    float x;
+    int isili = 0;
+    while (std::getline(feta_in, line)) {
+      std::istringstream iss(line);
+      std::vector<float> s;
+      while( iss >> x ) s.push_back(x);
+      feta[isili] = s;
+      isili++;
     }
   }
+  feta_in.close();
 
-  // snr
-  std::transform(sili.value.begin(),sili.value.end(),
-                 sili.srms.begin(),
-                 sili.snr.begin(),
-                 [&](float n, float d) { 
-                   return (d > 0? n/d : 0.0); });
+}
 
-} // pre_process
+
+
+template<typename Eta_t>
+void write_eta(Eta_t& feta, const std::string& filename) {
+
+  std::ofstream feta_out(filename);
+  if ( feta_out.good() ) {
+    for(int isili=0;isili<Nsili;++isili) {
+      std::vector<float> se;
+      hunpak(140+isili,&se[0]);
+      std::partial_sum (feta[isili].begin(), feta[isili].end(), se.begin());
+      for( auto& v : se )
+        feta_out << v;
+      feta_out << "\n";
+    }
+  }
+  feta_out.close();
+
+}

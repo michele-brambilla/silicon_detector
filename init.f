@@ -2,21 +2,21 @@
 *     Crea il file "oname" dove verranno messi gli hi
       function init(oname)
 
-      common/pawc/h(999999)      
+      common/pawc/h(9999999)      
       include 'common.inc'
       character*50 oname
 
-      call hlimit(999999)
+      call hlimit(9999999)
       call hropen(2,'analisi',oname,'N',4096,istat)
 
       call hldir('//','')
 
-      print *, "hplint"
-      CALL HPLINT(7879)
-      print *, "hplcap"
-      CALL HPLCAP(0)
-      CALL HPLZON (2, 2, 1, '')      
-      print *,"fine init"
+*      print *, "hplint"
+*      CALL HPLINT(7879)
+*      print *, "hplcap"
+*      CALL HPLCAP(0)
+*      CALL HPLZON (2, 2, 1, '')      
+*      print *,"fine init"
       end function init
 
 
@@ -31,7 +31,7 @@
       call hrend('analisi')
       close(2)
 
-      CALL HPLEND
+*      CALL HPLEND
 
       end function finalize
 
@@ -184,7 +184,7 @@
       integer,intent(in) :: id
 
 *      print *,"hplot"
-      CALL HPLOT(id,' ',' ',0)
+*      CALL HPLOT(id,' ',' ',0)
 *      print *,"fine hplot"
 
       end function plot

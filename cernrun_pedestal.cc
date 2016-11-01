@@ -26,7 +26,7 @@ const int offset=4;
 const int n_eta_bin = 100;
 
 
-void prepara_histo(const int);
+void prepara_histo_pede(const int);
 void set_status(const std::vector<float>&,
                 const std::vector<float>&,
                 float,
@@ -46,18 +46,35 @@ int main(int argc, char **argv) {
   if( !ok ) {
     throw std::runtime_error("Errore: file di configurazione non valido");
   }
+
+  std::cout << "estremi asic : " << std::endl;
+  for(int i=0;i<4;++i)
+    std::cout << p["estremi_asic"][i].GetInt() << "\t";
+  //            << p["estremi_asic_basculo"][0].GetInt() << "\n";
   
   //////////////////////////////
-  // status
+  // tele
   types::status<Nsili_raw,Nstrip> status(Nstrip);
   types::pedestal<Nsili_raw,Nstrip> pede(Nstrip);
   types::rms<Nsili_raw,Nstrip> rms(Nstrip);
   types::pedestal<Nsili_raw,Nstrip> spede(Nstrip);
   types::rms<Nsili_raw,Nstrip> srms(Nstrip);
+  //////////////////////////////
+  // basculo
+  types::status<1,Nstrip> status_basculo(Nstrip);
+  types::pedestal<1,Nstrip> pede_basculo(Nstrip);
+  types::rms<1,Nstrip> rms_basculo(Nstrip);
+  types::pedestal<1,Nstrip> spede_basculo(Nstrip);
+  types::rms<1,Nstrip> srms_basculo(Nstrip);
   
+
+
   std::vector< types::silicio<Nstrip> > sili;
   sili.push_back(types::silicio<Nstrip>(pede[0],rms[0],status[0]));
   sili.push_back(types::silicio<Nstrip>(pede[1],rms[1],status[1]));
+  sili.push_back(types::silicio<Nstrip>(pede_basculo[0],
+                                        rms_basculo[0],
+                                        status_basculo[0]));
   sili.push_back(types::silicio<Nstrip>(pede[3],rms[3],status[3]));
   sili.push_back(types::silicio<Nstrip>(pede[4],rms[4],status[4]));
 
@@ -67,7 +84,7 @@ int main(int argc, char **argv) {
   init_( ( std::string(p["output_directory"].GetString())+"/"+
            std::string(p["output"].GetString()) ).c_str());
 
-  prepara_histo(Nsili);
+  prepara_histo_pede(Nsili);
 
   int nmax=-1;
   
@@ -118,27 +135,12 @@ int main(int argc, char **argv) {
 
   chiudi_tupla_();
 
+  finalize_();
+
+
   for(int isili=0;isili<Nsili;++isili) {
     set_status(pede[isili],rms[isili],p["dead_threshold"].GetFloat(),status[isili]);
   }
-
-  // for(int isili=0;isili<Nsili;++isili) {
-  //   float avg = std::accumulate(rms[isili].begin(),rms[isili].end(),0.)/rms[isili].size();
-  //   float avg2 = std::inner_product(rms[isili].begin(),rms[isili].end(),rms[isili].begin(),0.)/rms[isili].size();
-  //   float sd = sqrt(avg2 - avg*avg);
-  //   std::cout << "avg = " << avg
-  //             << "sd = " << sd
-  //             << std::endl;
-    
-    
-  //   for(int istrip=0;istrip<384;++istrip) {
-  //     if( (rms[isili][istrip] < (avg - p["dead_threshold"].GetFloat()*sd) ) ||
-  //         (rms[isili][istrip] > (avg + p["dead_threshold"].GetFloat()*sd) ) ) {
-  //       status[isili][istrip] = true;
-  //     }
-  //   }
-    
-
 
   std::ofstream os(p["status"].GetString());
   for(int istrip=0;istrip<384;++istrip) {
@@ -148,13 +150,17 @@ int main(int argc, char **argv) {
   }
   os.close();
 
-  prepara_histo(Nsili);
+
+  /////////////////////////
+  // Inizializzo il file di output
+  init_( ( std::string(p["output_directory"].GetString())+"/"+"s"+
+           std::string(p["output"].GetString()) ).c_str());
+
+  prepara_histo_pede(Nsili);
   
   apri_tupla_(s.c_str(),nmax);
   if(nmax == -1) 
     return -1;
-    
-  
 
   std::cout << std::endl;
   std::cout << s << std::endl;
@@ -175,11 +181,10 @@ int main(int argc, char **argv) {
       std::transform(sili[isili].value.begin(),sili[isili].value.end(),
                      pede[isili].begin(),
                      spede[isili].begin(),
-                   std::minus<float>());    
+                     std::minus<float>());    
 
       for(int istrip=0;istrip<Nstrip;++istrip)
         if( status[isili][istrip] )  {
-          //          sili[isili].value[istrip] = 0;
           spede[isili][istrip] = 0;
         }
 
@@ -204,8 +209,8 @@ int main(int argc, char **argv) {
       for(int istrip=0;istrip<Nstrip;++istrip) {
         if( !status[isili][istrip] ) 
           hfill(100+isili,istrip,sili[isili].value[istrip]);
-        else
-          hfill(100+isili,istrip,0);
+        //        else
+        //          hfill(200+isili,istrip,0);
       }      
       
       
@@ -259,13 +264,12 @@ int main(int argc, char **argv) {
 
 
 
-void prepara_histo(const int N) {
+void prepara_histo_pede(const int N) {
 
-  hbprof(99,"pedestal",Nstrip,0.,384.);
+  hbprof(99,"dummy",Nstrip,0.,384.);
   for(int i=0;i<N;++i) {
-    // no-sub
-    hbprof(100+i,"pedestal",Nstrip,0.,384.);
-    hbprof(200+i,"pedestal-cmsub",Nstrip,0.,384.);
+    hbprof(100+i,"pedestal",Nstrip,-0.5,383.5);
+    hbprof(200+i,"spedestal",Nstrip,-0.5,383.5);
   }
   
 }

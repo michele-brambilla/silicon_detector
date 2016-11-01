@@ -54,15 +54,25 @@ int main(int argc, char **argv) {
 
   //////////////////////////////
   // status
-  types::status<Nsili_raw,Nstrip> st;
-  //  st(p["status"].GetString());
-  st.set(spede);
+  types::status<Nsili_raw,Nstrip> status;
+  //  status.read(p["status"].GetString());
+  //st.set(spede);
   
+  
+
+  for(int i =0;i<Nstrip;++i) {
+    status[0][i] = 0;
+    std::cout << spede[0][i] << "\t" << status[0][i] << std::endl;
+  }
+
+  exit(0);
+
+
   std::vector< types::silicio<Nstrip> > sili;
-  sili.push_back(types::silicio<Nstrip>(spede[0],srms[0],st[0]));
-  sili.push_back(types::silicio<Nstrip>(spede[1],srms[1],st[1]));
-  sili.push_back(types::silicio<Nstrip>(spede[3],srms[3],st[3]));
-  sili.push_back(types::silicio<Nstrip>(spede[4],srms[4],st[4]));
+  sili.push_back(types::silicio<Nstrip>(spede[0],srms[0],status[0]));
+  sili.push_back(types::silicio<Nstrip>(spede[1],srms[1],status[1]));
+  sili.push_back(types::silicio<Nstrip>(spede[3],srms[3],status[3]));
+  sili.push_back(types::silicio<Nstrip>(spede[4],srms[4],status[4]));
 
 
   /////////////////////////
@@ -125,9 +135,9 @@ int main(int argc, char **argv) {
       if(is_led_event()) continue;
 
       get_raw_data1_(&sili[0].value[0], &offset);
-      get_raw_data2_(&sili[1].value[1], &offset);
-      get_raw_data5_(&sili[2].value[2], &offset);
-      get_raw_data6_(&sili[3].value[3], &offset);
+      get_raw_data2_(&sili[1].value[0], &offset);
+      get_raw_data5_(&sili[2].value[0], &offset);
+      get_raw_data6_(&sili[3].value[0], &offset);
 
       float pitch = p["pitch"].GetFloat();
       std::vector<float> cut;
@@ -224,6 +234,7 @@ int main(int argc, char **argv) {
 
 void prepara_histo(const int N) {
 
+  hbook1(99,"dummy",100,0.,1000.);
   for(int i=0;i<N;++i) {
     // basics
     hbook1(100+i,"ph max",100,0.,1000.);

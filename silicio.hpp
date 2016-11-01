@@ -38,13 +38,11 @@ namespace types {
     typedef typename std::vector<value_type> array_f;
     typedef typename std::vector<bool> array_b;
 
-
     array_f value;
     array_f snr;
     array_f& spede;
     array_f& srms;
-    array_b& status;
-    
+    array_b& status;    
     
     array_f::iterator ph_max;
     array_f::iterator pull;
@@ -54,7 +52,7 @@ namespace types {
     silicio(array_f& spede_,array_f& srms_,array_b& status_) : spede(spede_),srms(srms_),status(status_){ 
       value.resize(Nstrip);
       snr.resize(Nstrip);
-      good_strips(status.begin(),status.end(),begin());
+      //      good_strips(status.begin(),status.end(),begin());
       //      subtract_pedestal(*this);
     }
     silicio(const silicio& other) : value(other.value), spede(other.spede), srms(other.srms), status(other.status) { snr.resize(Nstrip); };
@@ -66,110 +64,57 @@ namespace types {
 
     value_type& operator[](const int i) { return value[i]; }
 
-    array_f pre_process(const value_type& cut_ = 0.0f) {
-      cut = cut_;
-      array_f cm;
-      for(int i=0;i<Nasic;++i) {
-        cm.push_back(compute_cm(*this,128*i,128*(i+1),cut));
-        subtract_commonmode(*this,128*i,128*(i+1),cm[i]);
-      }
-      return cm;
-    }
-
-    
-    void process() {
-      compute_snr(value.begin(),value.end(),srms.begin(),snr.begin());
-      ph_max=std::max_element(value.begin(),value.end());
-      pull=std::max_element(snr.begin(),snr.end());
-      eta=algo::eta(begin(),end(),begin()+std::distance(snr.begin(),pull));
-    }
-
   };
 
-
-}
-
-
-template<class InputIterator,class StatusIterator>
-void good_strips(const StatusIterator begin, const StatusIterator end, InputIterator data) {
-  StatusIterator it=begin;
-  do {
-    it=find(it,end,1);
-    if((*it)==1) {
-      *(data+std::distance(begin,it))=-1.0;
-      //      std::cout << std::distance(begin,it) << "\t" << data[std::distance(begin,it)] << "\t" << (*it) << std::endl;
-    }
-  }while (++it<end);
-}
-
-template<class InputIterator,class StatusIterator, typename Predicate>
-void good_strips(StatusIterator begin, const StatusIterator end, InputIterator data, Predicate Pred) {
-  StatusIterator it(begin);
-  do {
-    it=find(it,end,Pred(*it));
-    if(Pred(*it)) {
-      *(data+std::distance(begin,it))=-1.0;
-      //      std::cout << std::distance(begin,it) << "\t" << data[std::distance(begin,it)] << "\t" << Pred(*it) << std::endl;
-    }
-  }while (it!=end);
-  it=end-1;
-  if(Pred(*it))
-    *(data+std::distance(begin,it))=-1.0;
 }
 
 
 
+template <typename Silicio>
+void pre_process(Silicio& sili, const float& soglia, const float& cut) {
+  std::array<float,Silicio::Nstrip> gap;
 
-//////////////////////
-// Sottrae il pede dai dati raw
-template<class Input>
-void subtract_pedestal(Input& sili) {
-  float t;
-  for(int i=0;i<sili.value.size();++i) {
-    if(sili.spede[i] < 1)
-      sili.value[i] = -1;
-    else {
-      sili.value[i] -= sili.spede[i];
-      if (sili.value[i] < 0)
-        sili.value[i] = 0;
+  // zeros dead strips
+  std::transform(sili.value.begin(),sili.value.end(),
+                 sili.spede.begin(),
+                 sili.value.begin(),
+                 [&](float arg1, bool arg2) { 
+                   return (arg2 > 0? arg1 : 0.0); });
+
+
+  // subtracts pede
+  std::transform(sili.value.begin(),sili.value.end(),
+                 sili.spede.begin(),
+                 gap.begin(),
+                 std::minus<float>());
+        
+  {
+    const int Nasic=3;
+    std::array<float,Nasic> cm,n;
+    for(int iasic=0;iasic<Nasic;++iasic) {
+            
+      for(int istrip = 128*iasic; istrip < 128*(iasic+1);++istrip)
+        if( gap[istrip] <soglia*sili.srms[istrip] && !sili.status[istrip] ) {
+          cm[iasic] += gap[istrip];
+          n[iasic]++;
+        }
+      cm[iasic]/=n[iasic];
+      for(int istrip = 128*iasic; istrip < 128*(iasic+1);++istrip)
+        if(!sili.status[istrip])
+          sili.value[istrip] = gap[istrip] - cm[iasic];         
     }
   }
-}
-//////////////////////
-// Assume adc gia' sottratta del pede e "spente" le strip "morte"; calcola il cm e lo ritorna
-template<class Input, typename T>
-T compute_cm(Input& sili, const int first, const int last, const T& cut) {
-
-  float tmp_cm = 0;
-  int n=0;
-  for(int i = first;i<last;++i) {
-    if(sili.value[i] < 1.*cut && sili.value[i]>0) {
-      tmp_cm += sili.value[i];
-      n++;
-    } 
-  }
-  return tmp_cm/n;
-}
-//////////////////////
-// Assume adc gia' sottratta del pede e "spente" le strip "morte". Sottrae cm
-template<class Input>
-void subtract_commonmode(Input& sili, const int first, const int last, float cm) {
-  for(int i=0;i<sili.value.size();++i) {
-    if( sili.value[i] > 0)
-      sili.value[i] -= cm;
-    if (sili.value[i] < 0)
-      sili.value[i] = 0;
-  }
-}
+  // snr
+  std::transform(sili.value.begin(),sili.value.end(),
+                 sili.srms.begin(),
+                 sili.snr.begin(),
+                 [&](float n, float d) { 
+                   return (d > 0? n/d : 0.0); });
+  
+} // pre_process
 
 
 
-
-template<class InputIterator,class OutputIterator>
-OutputIterator compute_snr(InputIterator begin,const InputIterator end,InputIterator rms, OutputIterator snr) {
-  do {
-    if(*rms>0)
-      (*snr)=(*begin)/(*rms);
-  }while(++rms,++snr,++begin!=end);
-  return snr;
-}
+// template <typename Silicio>
+// void pre_process_basculo(Silicio& sili, const float& soglia, const float& cut) {
+//   std::array<float,Silicio::Nstrip> gap;

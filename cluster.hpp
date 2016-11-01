@@ -43,19 +43,15 @@ namespace algo {
     }
 
     void fill_histo_hit(const int i, float pitch) {
-      
       hf1(190+i,x_cm);
       hf1(200+i,x_cm-std::floor(x_cm/pitch)*pitch);
       hf1(210+i,x_pos);
       hf1(220+i,x_pos-std::floor(x_cm/pitch)*pitch);
-
-
     }
   };
 
   template <typename S>
-  std::vector<cluster_data>  clusterize(S& s,
-                   float cut) {
+  std::vector<cluster_data>  clusterize(S& s, float cut) {
 
     std::vector<float> app(s.value.size());
     std::transform(s.value.begin(),s.value.end(),
@@ -63,13 +59,6 @@ namespace algo {
                    app.begin(),
                    [&](float value,float noise) { return (value > (cut*noise) ? value : 0.0); }
                    );
-    // for(int i = 0; i < app.size(); ++i)
-    //   std::cout << s.value[i] << "\t"
-    //             << s.srms[i] << "\t"
-    //             << app[i] << "\t"
-    //             << std::endl;
-    
-    // std :: cout << std::count_if(app.begin(),app.end(),[&](float x){ return (x > 0.0); }) << std::endl;
     
     std::vector<cluster_data> cluster;
     cluster_data c;
@@ -84,7 +73,6 @@ namespace algo {
 
       if( *stat )
         continue;
-      //      std:: cout << (*it) << "\t" << (*rms)*cut << std::endl;
       if( !in_cluster && (*it) > (*rms)*cut ) {
         in_cluster = true;
         c.begin=std::distance(s.begin(),it);
@@ -94,9 +82,6 @@ namespace algo {
         c.end=std::distance(s.begin(),it);
         cluster.push_back(c);
       }
-
-      // std:: cout << c.begin << "\t" << in_cluster << "\t" << c.end << std::endl;
-      // std::cin >> last_good;
     }
     if(in_cluster) {
       in_cluster = false;

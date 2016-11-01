@@ -7,6 +7,8 @@
     "last" : 100183,
     "output" : "run100183.test",
     "output_directory" : "result",
+    "estremi_asic" : [0, 128, 256, 384],
+    "estremi_asic_basculo" : [0, 56 ],
     "dead_threshold" : 1.5,
     "feta_file" : "feta100183.dat",
     "display_event" : 0,
