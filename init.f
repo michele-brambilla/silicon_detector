@@ -1,13 +1,13 @@
 *********************************************
 *     Crea il file "oname" dove verranno messi gli hi
-      function init(oname)
+      function init(oname,oid)
 
       common/pawc/h(9999999)      
       include 'common.inc'
       character*50 oname
 
       call hlimit(9999999)
-      call hropen(2,'analisi',oname,'N',4096,istat)
+      call hropen(oid,'analisi',oname,'N',4096,istat)
 
       call hldir('//','')
 
@@ -23,13 +23,14 @@
 
 *********************************************
 *     Chiude il file contenente gli istogrammi
-      function finalize()
+      function finalize(oid)
+      integer oid
 
       call hldir('//','T')
       call hcdir('//analisi','')
       call hrout(0,icycle,'')
       call hrend('analisi')
-      close(2)
+      close(oid)
 
 *      CALL HPLEND
 
@@ -39,15 +40,16 @@
 
 *********************************************
 *     Apre la tupla o restituisce un messaggio di errore
-      subroutine apri_tupla(tname,nmax)
+      subroutine apri_tupla(tname,nmax,id)
 
       include 'common.inc'
       integer nmax,istat
       character*50 tname
+      integer id
 
       write(0,*) "file = ",tname
 *      print *,"file = ",tname
-      call hropen(40,'dati',tname,'',4096,istat)
+      call hropen(id,'dati',tname,'',4096,istat)
 
       if (istat.eq.0) then
          call hrin(1,99999,0)
@@ -68,11 +70,12 @@
 
 *********************************************
 *     Chiude la tupla 
-      function chiudi_tupla()
+      function chiudi_tupla(id)
+      integer id
 
 *      call hdelet(1)
       call hrend('dati')
-      close (40)
+      close (id)
             
       end function chiudi_tupla
 

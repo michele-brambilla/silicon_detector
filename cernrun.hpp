@@ -3,9 +3,9 @@
 
 #include "uparam.hpp"
 #include "types.hpp"
-#include "util.hpp"
-#include "pedestal.cc"
-#include "pull.hpp"
+// #include "util.hpp"
+//#include "pedestal.cc"
+//#include "pull.hpp"
 
 ////////////////////////////////
 // hbook, fortran2c
@@ -47,10 +47,8 @@ extern "C" {
     return false;
   }
 
-  void hbook1(int id, std::string name,
-              int nchan, float min, float max, 
-              float other=0.) {
-    unsigned int dummy(0);
+  void hbook1(int id, std::string name, int nchan, float min, float max, float other=0.) {
+    unsigned int dummy(1);
     hbook1_(&id,&name[0],&nchan,(float*)&min,(float*)&max,(float*)&other,dummy);
   }
 
@@ -58,7 +56,7 @@ extern "C" {
               int nchan_x, float x_min, float x_max, 
               int nchan_y, float y_min, float y_max, 
               float other=0.) {
-    unsigned int dummy(0);
+    unsigned int dummy(1);
     hbook2_(&id,&name[0],
             &nchan_x,(float*)&x_min,(float*)&x_max,
             &nchan_y,(float*)&y_min,(float*)&y_max,
@@ -68,32 +66,28 @@ extern "C" {
   void hbprof(int id, std::string name,
               int nchan_x, float x_min, float x_max,
               float max_value=4000.) {
-    float dummy(0);
+    float dummy(1);
     float min_value = 0.;
     char opt='S';
     hbprof_(&id, &name[0], &nchan_x, (float*)&x_min,(float*)&x_max, (float*)&min_value,(float*)&max_value, &opt,1,1);
   }
 
   
-  void hf1(int id, float x, float weight=1.0f) {
-    hf1_(&id,&x,&weight);
-  }
-  void hf2(int id, float x, float y, float w=1.0f) {
-    hf2_(&id,&x,&y,&w);
-  }
+  void hf1(int id, float x, float weight=1.0f) {hf1_(&id,&x,&weight);  }
+  void hf2(int id, float x, float y, float w=1.0f) { hf2_(&id,&x,&y,&w); }
   
-  void hfill(int id, int istrip, float value,float weight = 1.0f) {
-    float fstrip=istrip;
+  void hfill(int id, int istrip, float value,float weight = 1.0f) { 
+    float fstrip=istrip; 
     hfill_(&id,&fstrip,&value,&weight);
   }
   
   void hunpak(int id, float* x, int other=0) {
     char c=' ';
-    hunpak_ (&id,x,&c,&other,0);
+    hunpak_ (&id,x,&c,&other,1);
   }
   void hunpke(int id, float* x, int other=0) {
     char c=' ';
-    hunpke_ (&id,x,&c,&other,0);
+    hunpke_ (&id,x,&c,&other,1);
   }
   void hpak(int id, float* x) {
     char c=' ';

@@ -4,3 +4,4 @@ util
 testing
 *.kumac
 *.kumacold
+*.o

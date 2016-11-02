@@ -22,12 +22,13 @@ INCLUDE = -Wcpp -Irapidjson/include
 CXX = g++-4.8 -std=c++11 --fast-math -Wno-cpp -Df2cFortran
 FF = gfortran-4.8 -Df2cFortran
 
-headers := types.hpp util.hpp cernrun.hpp uparam.hpp pede_rms.hpp silicio.hpp algo.hpp cluster.hpp status.hpp
+headers := types.hpp util.hpp cernrun.hpp uparam.hpp pede_rms.hpp silicio.hpp algo.hpp cluster.hpp status.hpp \
+	wrapper.hpp input_parser.hpp
 
 objects_fortran := init.o prepara_histo.o
-objects_cxx := pedestal.o
+objects_cxx := pedestal.o  wrapper.o input_parser.o
 
-mains := basculo.o cernrun_pedestal.o
+mains := detector.o
 
 exe := $(patsubst %.o,%,$(mains))
 
