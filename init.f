@@ -191,3 +191,16 @@
 *      print *,"fine hplot"
 
       end function plot
+
+
+      subroutine prepara_histo(n)
+      integer n
+      do isilicio=0,n-1
+
+*     pull e PH (per telescopio x-y e per strip)
+         call hbook1(100+isilicio,'PH'  ,1000,0.5,5000.5,0.)
+         call hbook1(110+isilicio,'Pull',1000,0.5,1000.5,0.)
+
+      end do
+
+      end subroutine prepara_histo

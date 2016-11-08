@@ -7,12 +7,12 @@
 
 ////////////////////////////////
 // hbook, fortran2c
-#include "cfortran/packlib.h"
+#include "cfortran.h"
+#include "cfortran/hbook.h"
 
 
 #include <string>
 #include <type_traits>
-
 
 
 
@@ -30,6 +30,15 @@ extern "C" {
   void get_raw_data5_(float*,const int*);
   void get_raw_data6_(float*,const int*);
   void plot_(int*);
+
+  //  void hbprof_(int*,char*,int*,float*,float*,float*,float*,char*);
+  void hgnt_(int*, int*, int*);
+  //  void hfill_(int*, int*, float*,float*);
+  //  void hf1_(int*, float*, float*);
+  //  void hunpak_(int*, float*, float*);
+  //  void hunpke_(int*, float*, float*);
+
+  void prepara_histo_(int*);
 }
 
 extern "C" {
@@ -42,13 +51,13 @@ extern "C" {
   
   void hbprof(int, std::string,int, float, float,float=4000.);
   
-  void hf1(int, float, float=1.0f);
+  //  void hf1(int, float*, float=1.0f);
   //  void hf2(int, float, float, float=1.0f);
   
   void hfill(int, int, float,float=1.f);
   
-  void hunpak(int, float*, int=0);
-  void hunpke(int, float*, int=0);
+  void hunpak(int, float*, int=1);
+  void hunpke(int, float*, int=1);
   void hpak(int, float*);
 
   // void hplot(int id) {

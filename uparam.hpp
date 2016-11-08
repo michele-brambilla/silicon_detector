@@ -1,7 +1,9 @@
 #ifndef UPARAM_H
 #define UPARAM_H
 
+#include <iostream>
 #include <string>
+#include <fstream>
 #include <algorithm>
 #include <map>
 //#include <util.hpp>
@@ -84,10 +86,6 @@ namespace uparam {
   };
 }
 
-std::ostream& operator<<(std::ostream& os, const uparam::Param p) {
-  for(auto it=p.begin();it!=p.end();++it)
-    os <<(*it).first << " : " << (*it).second << std::endl;
-  return os;
-}
+std::ostream& operator<<(std::ostream&, const uparam::Param);
 
 #endif

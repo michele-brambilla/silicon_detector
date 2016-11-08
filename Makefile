@@ -5,13 +5,10 @@ AR=ar rcs
 .SUFFIXES: .f .o
 
 
-CXXFLAGS = -O3 -DDO_DEBUG #-ggdb -O0
-FFLAGS = -O3 #-ggdb -O0
+CXXFLAGS = -DDO_DEBUG -g0 -O3
+FFLAGS =  -g0 -O3
 
-#LIBS += `cernlib -safe pawlib packlib graflib` -lgfortran
-#LDFLAGS =  -L/usr/lib
-
-LIBS += `cernlib -safe packlib` -lgfortran
+LIBS  = `cernlib -safe packlib` -lgfortran
 LDFLAGS = -static -L/usr/lib
 CXXFLAGS += -DNO_PLOT
 
@@ -23,12 +20,12 @@ CXX = g++-4.8 -std=c++11 --fast-math -Wno-cpp -Df2cFortran
 FF = gfortran-4.8 -Df2cFortran
 
 headers := types.hpp util.hpp cernrun.hpp uparam.hpp pede_rms.hpp silicio.hpp algo.hpp cluster.hpp status.hpp \
-	wrapper.hpp input_parser.hpp
+	wrapper.hpp input_parser.hpp analisi.hpp my_histo.hpp
 
 objects_fortran := init.o prepara_histo.o
-objects_cxx := pedestal.o  wrapper.o input_parser.o
+objects_cxx :=  wrapper.o input_parser.o types.o analisi.o uparam.o my_histo.o
 
-mains := detector.o
+mains := detector.o pedestal.o
 
 exe := $(patsubst %.o,%,$(mains))
 
@@ -49,5 +46,5 @@ $(exe): $(mains) $(objects_fortran)  $(objects_cxx) $(headers)
 .PHONY : clean
 
 clean:
-	\rm *.o basculo
+	\rm *.o $(exe)
 

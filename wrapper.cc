@@ -78,19 +78,9 @@ extern "C" {
 
 void prepara_histo(const int N) {
 
-  hbook1(99,"dummy",100,0.,1000.);
-
-  std::vector<std::string> postfix = {"1x","1y","2x","2y"};
-
-  {
-    hbook1(100,std::string("ph max")+"1x",200,0.,2000.);
-    hbook1(101,std::string("ph max")+"1y",200,0.,2000.);
-    hbook1(102,std::string("ph max")+"2x",200,0.,2000.);
-    hbook1(103,std::string("ph max")+"2y",200,0.,2000.);
-    hbook1(110,std::string("pull"  )+"1x",100,0.,250.);
-    hbook1(111,std::string("pull"  )+"1y",100,0.,250.);
-    hbook1(112,std::string("pull"  )+"2x",100,0.,250.);
-    hbook1(113,std::string("pull"  )+"2y",100,0.,250.);
+  for(int isili=0;isili<N;++isili) {
+    hbook1(100+isili,std::string("ph max"),200,0.,2000.);
+    hbook1(110+isili,std::string("pull"  ),100,0.,250.);
   }
   // {
   //   hbook1(120,std::string("phL")+"1x",100,0.,250.);

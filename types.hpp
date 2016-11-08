@@ -1,159 +1,178 @@
-#ifndef _TYPES_H
-#define _TYPES_H
+#pragma once
 
-#include <iostream>
 #include <vector>
-#include <array>
+#include <algorithm>
+#include <iostream>
 
-namespace types {
+struct cluster {
+  float x_cm;
+  float x_pos;
+};
 
-  template<class data_t,class iterator_t, class biterator_t>
-  data_t raw_common_mode(iterator_t first, iterator_t last, 
-                         iterator_t pede, iterator_t rms, 
-                         biterator_t status, const data_t& cut) {
-    iterator_t p=pede;
-    iterator_t r=rms;
-    biterator_t s=status;
-    data_t gap,cm=0.;
-    int chan_count=0;
 
-    for(iterator_t i=first;i!=last;++i,++p,++r,++s) {
-      gap = *i - *p;
-      if( gap > cut*(*r) && (*s)==0) {
-        cm += gap;
-        ++chan_count;
+struct sili_stats {
+
+  int max_strip;
+  float ph;
+  float pull;
+  float pullL;
+  float pullR;
+  float eta;
+  int n_cluster;
+  std::vector<cluster> c;
+
+};
+
+
+
+
+struct over_threshold {
+  over_threshold(const over_threshold& other) : rms(other.rms), cut(other.cut) { };
+  over_threshold(std::vector<float>& r, float c) : rms(r), cut(c) { }
+  float operator()(std::vector<float>& x, const int min, const int max) {
+    float result = 0.0f;
+    for(int i=min;i<max;++i) {
+      if( x[i] > cut*rms[i] )
+        result += x[i];
+    }
+    return result;
+  }
+
+  template<class BinaryOperator>
+  float operator()(std::vector<float>& x, const int min, const int max, 
+                   BinaryOperator op) {
+    float result = 0.0f;
+    for(int i=min;i<max;++i) {
+      if( x[i] > cut*rms[i] )
+        result = op(result,x[i]);
+    }
+    return result;
+  }
+
+  void pretty_print(std::vector<float>& x, const int min, const int max) {
+    for(int i=min;i<max;++i) {
+      if( x[i] > cut*rms[i] )
+        std::cout << "\t" << x[i] << "(" << cut*rms[i] << ")";
+      else
+        std::cout << "\t" << 0;
+    }
+    std::cout << "\n";
+  }
+  
+  
+  std::vector<float>& rms;
+  float cut;
+};
+
+
+template<typename T>
+struct silicio {
+  typedef T value_t;
+  typedef typename std::vector<value_t> value_vector;
+  typedef typename std::vector<value_t> bool_vector;
+
+  value_vector	 data;
+  value_vector	 spede;
+  value_vector	 srms;
+  bool_vector status ;
+  sili_stats info;
+  float cut;
+
+  silicio(const int nstrip) : cut(0.0f) {
+    data.resize(nstrip);
+    spede.resize(nstrip);
+    srms.resize(nstrip);
+    status.resize(nstrip);
+  }
+  silicio(const value_vector& p, const value_vector& r, const bool_vector& s, const float& c) : spede(p), srms(r), status(s), cut(c) {
+    data.resize(spede.size());
+  }
+  value_t& operator[](const int n) { return data[n]; }
+
+  void basic_info(float cut_low) {
+    int distance = std::distance(std::max_element(data.begin(),
+                                                  data.end() ),
+                                 data.end() );
+    if( distance == data.size() || data[distance] <= cut*srms[distance] ) {
+      info.max_strip = -1;
+      info.ph = -1;
+      info.pull = -1;
+      info.pullL = -1;
+      info.pullR = -1;
+      info.eta = -10;
+      return;
+    }
+    info.max_strip = distance;
+    info.ph = data[info.max_strip];
+    info.pull = info.ph/srms[info.max_strip];
+    
+    float other;
+    if (distance == 0) {
+      other = data[info.max_strip+1]; // (R)
+      info.pullL =-1;
+      info.pullR = other;
+    }
+    else {
+      if( distance == data.size()-1 ) {
+        other = data[info.max_strip-1];
+        info.pullL = other;
+        info.pullR = -1;
+      }
+      else {
+        other = std::max(data[info.max_strip-1],data[info.max_strip+1]);
+        info.pullL = data[info.max_strip-1];
+        info.pullR = data[info.max_strip+1];
       }
     }
 
-    if(chan_count > 0)
-      return cm/static_cast<float>(chan_count);
-    else
-      return 0.;
+    if( info.pullL < cut_low) info.pullL = -1;
+    if( info.pullR < cut_low) info.pullR = -1;
+    info.eta = (info.ph-other)/(info.ph+other);
+    
   }
 
 
+};
 
-  template <class T, int N>
-  struct data_silicio {
-    typedef T data_t;
-    typedef std::vector<data_t> array_t;
-    typedef std::vector< std::array<data_t,2> > cut_t;
-    typedef data_silicio<data_t,N> self_t;
-    typedef typename array_t::iterator iterator;
-    typedef typename array_t::const_iterator const_iterator;
-    typedef std::vector<bool> bool_t;
-    typedef typename bool_t::iterator biterator;
 
-    array_t data;
-    array_t pede;
-    array_t rms;
-    cut_t cut;
-    bool_t status;
 
-    iterator begin() { return data.begin(); }
-    const_iterator begin() const { return data.begin(); }
-    iterator end() { return data.end(); }
-    const_iterator end() const { return data.end(); }
 
-    data_silicio(const int Nstrip=N) { data.resize(Nstrip); pede.resize(Nstrip); rms.resize(Nstrip); status.resize(Nstrip); };
-    data_silicio(array_t& data_,const int Nstrip=N) : data(data_) { pede.resize(Nstrip); rms.resize(Nstrip); status.resize(Nstrip); };
-    data_silicio(array_t& data_, array_t& pede_,array_t& rms_,
-                 cut_t& cut_,bool_t& status_) : data(data_),pede(pede_),rms(rms_),cut(cut_),status(status_) { };
-    data_silicio(self_t& other) : data(other.data),pede(other.pede),rms(other.rms),cut(other.cut),status(other.status){ };
-
-    data_t* c_data(void) { return &data[0]; }
-    
-    const data_t primary_cut(const int izone=0) { return cut[izone][0]; }
-    const data_t secondary_cut(const int izone=0) { return cut[izone][1]; }
-
-    self_t& sub_pede(const int nasic, const data_t cut=5.) {
-      data_t cm;
-      const int nchan=static_cast<int>(data.size()/nasic);
-      int off1,off2;
-      
-      for(int iasic=0;iasic<nasic;++iasic) {
-        off1=nchan*iasic;
-        off2=std::min(nchan*(iasic+1),static_cast<int>(data.size()));
-        cm=raw_common_mode(data.begin()+off1,data.begin()+off2,
-                           pede.begin()+off1,rms.begin()+off1,
-                           status.begin()+off1,
-                           cut);
-        sub_pede_impl(data.begin()+off1,data.begin()+off2,
-                      pede.begin()+off1,status.begin()+off1,
-                      cm);
-      }
-      return *this;//sub_pede_impl(nasic);
-    }
-
-    self_t& disable_no_good() {
-      // biterator i = status.begin();
-      // iterator x;
-      // do {
-      //   *x=*x;
-      //   //        if(*i==1) *x = -1.;
-      // } while ((++i) != status.end(),++x);
-      // return *this;
-
-    }
-
-  private:
-
-    void sub_pede_impl(iterator first, iterator last, iterator p, biterator s, const data_t& cm) {
-      
-      for(iterator i=first;i!=last;++i,++p,++s) {
-        if( (*s) == 0 ) {
-          *i -= (*p) + cm;
-          if( *i < 0. ) *i=-1.;
+struct common_mode {
+  common_mode(std::vector<float>& p, std::vector<float>& r, 
+              float c=5.0f) : pede(p), rms(r), cut(c) { };
+  
+  float get_cm_value(std::vector<float>& data, const int first, const int last) {
+    float gap,cm=0;
+    int n_count=0;
+    for(int istrip=first;istrip < last;++istrip) {
+      if(pede[istrip] > 0.0f) {
+        gap = data[istrip] - pede[istrip];
+        if(gap < cut*rms[istrip]) {
+          n_count++;
+          cm += gap;
         }
-        else
-          *i = -1.;
       }
     }
+    if(n_count != 0)
+      return cm/n_count;
+    return 0;
+  }
 
-  };
+  std::vector<float>::iterator subtract_cm_value(std::vector<float>& data, 
+                                                 const int first, const int last,
+                                                 const float& cm) {
+    for(int istrip=first;istrip < last;++istrip) {
+      if(pede[istrip] > 0.0f) {
+        data[istrip] = std::max(data[istrip]-pede[istrip]-cm,0.0f);
+      }
+      else {
+        data[istrip] = 0.0f;
+      }
+    }
+    return data.begin()+first;
+  }
 
-
-
-
-  
-
-  
-  template<typename T,int N>
-  struct basic_data {
-
-    typedef T data_t;
-    typedef typename std::vector<T> array_t;
-    typedef basic_data<T,N> self_t;
-    
-    typedef typename array_t::iterator iterator;
-    typedef typename array_t::const_iterator const_iterator;
-    
-    array_t d;
-    iterator begin() { return d.begin(); }
-    const_iterator begin() const { return d.begin(); }
-    iterator end() { return d.end(); }
-    const_iterator end() const { return d.end(); }
-
-    basic_data(const int Nstrip=N) { d.resize(N); };
-    basic_data(const self_t& other) : d(other) { };
-    
-    T& operator[](const int i) { return d[i]; }
-
-  };
-  
-
-  template<typename T>
-  struct info_t {
-
-    typedef typename T::data_t data_t;
-    typedef typename T::iterator iterator;
-    typedef typename T::const_iterator const_iterator;
-    
-    data_t max_value;
-    int imax;
-  };
-
-
-}
-
-#endif //TYPES_H
+  std::vector<float>& pede;
+  std::vector<float>& rms;
+  float cut;
+};
